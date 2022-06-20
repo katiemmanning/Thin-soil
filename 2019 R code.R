@@ -1,12 +1,13 @@
+#insect communities
 #bring in datasets
 
-bowls <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Bowl_natural.csv?token=GHSAT0AAAAAABSFZTB2FZOSER2YXMUQZEDAYS5UCHQ",na.strings = NULL)
+bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Bowl_natural.csv",na.strings = NULL)
 summary(bowls)
 str(bowls) 
-ramps <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Ramp_natural.csv?token=GHSAT0AAAAAABSFZTB2DXWH7WA4B2PQ5HFOYS5UC6Q",na.strings = NULL)
+ramps <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural.csv",na.strings = NULL)
 summary(ramps)
 str(ramps)
-sticky <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Sticky%20card_natural.csv?token=GHSAT0AAAAAABSFZTB32TJ5QMTROVWHS32SYS5UDJQ",na.strings = NULL)
+sticky <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural.csv",na.strings = NULL)
 summary(sticky)
 str(sticky)
 
@@ -31,22 +32,22 @@ allbugs$region<-ifelse(allbugs$Site=="WLR", "South",
 str(allbugs)
 
 #To obtain richness counts
-allbugs.rowsums <- rowSums(allbugs[,4:48]>0)
+allbugs.rowsums <- rowSums(allbugs[,4:49]>0)
 allbugs$richness <- allbugs.rowsums
 
 #To obtain abundance counts
-allbugs.abun <- rowSums(allbugs[,4:48])
+allbugs.abun <- rowSums(allbugs[,4:49])
 allbugs$abundance <- allbugs.abun
 
 #load vegan
 library(vegan)
 
 #calculate Shannon diversity
-diversity <-diversity(allbugs[,4:48])
+diversity <-diversity(allbugs[,4:49])
 allbugs$diversity <-diversity
 
 #calculate Evenness
-evenness <-diversity/log(specnumber(allbugs[,4:48]))
+evenness <-diversity/log(specnumber(allbugs[,4:49]))
 allbugs$evenness <- evenness
 
 #look at data set
@@ -59,7 +60,7 @@ library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-richmodel <- lmer(richness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 1057
+richmodel <- lmer(richness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 1060
 #region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
 summary(richmodel)
 AIC(richmodel)
@@ -80,7 +81,7 @@ rich.cld.s
 #
 
 ##abundance linear mixed effects model
-abunmodel <- lmer(abundance~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 3152
+abunmodel <- lmer(abundance~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 3153
 #region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
 summary(abunmodel)
 AIC(abunmodel)
@@ -101,7 +102,7 @@ abun.cld.s
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 291
+divmodel <- lmer(diversity~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 287
 #region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
 summary(divmodel)
 AIC(divmodel)
@@ -115,14 +116,14 @@ div.cld
 
 div.emm.s<-emmeans(divmodel,pairwise~Site) #comparing site diversity
 div.emm.s
-#results: no differences between sites
+#results: difference between CHA-DAL
 div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
 div.cld.s
 
 #
 
 ##evenness linear mixed effects model
-evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = -92
+evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = -94
 #region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
 summary(evenmodel)
 AIC(evenmodel)
@@ -136,7 +137,7 @@ even.cld
 
 even.emm.s<-emmeans(evenmodel,pairwise~Site) #comparing site richness
 even.emm.s
-#results: no differences between sites
+#results: difference between CHA-DAL
 even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
 even.cld.s
 
@@ -196,14 +197,14 @@ evenness.plot
 ###
 #mush together plots
 library(ggpubr) 
-boxplot <- ggarrange(richness.plot, abundance.plot, diversity.plot, evenness.plot,
+allbugs_boxplot <- ggarrange(richness.plot, abundance.plot, diversity.plot, evenness.plot,
                      #labels = c("A", "B", "C", "D"),
                      ncol = 1, nrow = 4,
                      common.legend = TRUE, legend = "bottom")
-boxplot
+allbugs_boxplot
 
-pdf("boxplot.pdf", height=8, width=8) #height and width in inches
-boxplot
+pdf("allbugs_boxplot.pdf", height=8, width=8) #height and width in inches
+allbugs_boxplot
 dev.off()
 ###
 
@@ -219,30 +220,31 @@ brewer.pal(n = 9, name = "Paired") #only has 8 colors, but we have 9 sites
 library (vegan)
 
 #Create matrix of environmental variables
-env.matrix<-allbugs[c(1:3,51:52)]
+env.matrix<-allbugs[c(1:3,50:55)]
 #create matrix of community variables
-com.matrix<-allbugs[c(4:50)]
+com.matrix<-allbugs[c(4:49)]
 
 #ordination by NMDS
-NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=FALSE, trymax=300)
-###stress = no convergence (but once it said 0.15)
+NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
+NMDS
+###stress = 0.27
 stressplot(NMDS)
 
 #plot NMDS for region
 #might need to change colors
-#8 x 10
+#8 x 13
 plot(NMDS, disp='sites', type="n")
 #title(main="Arthropod community composition by region", cex.main=1.5)
 #add ellipsoids with ordiellipse
+ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South")
 ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#E69F00",kind="sd", conf=0.95, label=FALSE, show.groups = "North")
 ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#009E73",kind="sd", conf=0.95, label=FALSE, show.groups = "Central") 
-ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South") 
 #add data points
 points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, col="#E69F00")
 points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
 points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
 #add legend
-legend(2.62,2.95, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+legend(0.89,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
@@ -253,42 +255,42 @@ fit
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$region))
-#P-value = 0.6367 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.7096 -- assumes homogeneity of multivariate dispersion
 
 ###
 
 #plot NMDS for Northern sites 
-#8 x 10
+#8 x 13
 plot(NMDS, disp='sites', type="n")
 title(main="North", adj = 0.01, line = -2, cex.main=2.5)
 #add ellipsoids with ordiellipse
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
 ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
 ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
 #add data points
 points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="#A6CEE3")
 points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
 points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
 #add legend
-legend(1.43,2.95, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+legend(0.8,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 
 #plot NMDS for Central sites 
-#8 x 10
+#8 x 13
 plot(NMDS, disp='sites', type="n")
 title(main="Central", adj = 0.01, line = -2, cex.main=2.5)
 #add ellipsoids with ordiellipse
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
 ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
 ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
 #add data points
 points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="#FDBF6F")
 points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
 points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
 #add legend
-legend(0.15,2.95, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
+legend(0.15,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
 
 #plot NMDS for Southern sites 
-#8 x 10
+#8 x 13
 plot(NMDS, disp='sites', type="n")
 title(main="South", adj = 0.01, line = -2, cex.main=2.5)
 #add ellipsoids with ordiellipse
@@ -300,7 +302,7 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col=
 points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
 points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
 #add legend
-legend(1.67,2.95, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
+legend(0.67,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
 
 #bootstrapping and testing for differences between the groups (sites)
 fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="bray")
@@ -311,17 +313,270 @@ fit
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$Site))
-#P-value = 0.1694 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.1769 -- assumes homogeneity of multivariate dispersion
 
-####
+######
+
+#Bee analysis (species)
+#bring in data
+bee_bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees%20-%20Bowl_species.csv",na.strings = NULL)
+summary(bee_bowls)
+str(bee_bowls) 
+bee_ramps <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees%20-%20Ramp_species.csv",na.strings = NULL)
+summary(bee_ramps)
+str(bee_ramps)
+
+#add trap type as a column on each data file
+bee_bowls$Trap="bowl"
+bee_ramps$Trap="ramp"
+
+#combine data tables 
+library (plyr)
+bees <- rbind.fill (bee_bowls, bee_ramps)
+
+#add column for region (south central north)
+bees$region<-ifelse(bees$Site=="WLR", "South",
+                       ifelse(bees$Site=="WPR", "South",
+                              ifelse(bees$Site=="SNY", "South",
+                                     ifelse(bees$Site=="DAL", "North", 
+                                            ifelse(bees$Site=="BAL", "North",
+                                                   ifelse(bees$Site == "CHA", "North", "Central")
+                                            )))))
+str(bees)
+
+#To obtain richness counts
+bees.rowsums <- rowSums(bees[,4:29]>0)
+bees$richness <- bees.rowsums
+
+#To obtain abundance counts
+bees.abun <- rowSums(bees[,4:29])
+bees$abundance <- bees.abun
+
+#load vegan
+library(vegan)
+
+#calculate Shannon diversity
+diversity <-diversity(bees[,4:29])
+bees$diversity <-diversity
+
+#calculate Evenness
+evenness <-diversity/log(specnumber(bees[,4:29]))
+bees$evenness <- evenness
+
+#look at data set
+summary(bees)
+str(bees)
+
+
+##richness linear mixed effects model
+library (emmeans) #for pairwise comparisons
+library(lme4)
+library(lmerTest) #to obtain p values
+
+richmodel <- lmer(richness~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 179
+#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+summary(richmodel)
+AIC(richmodel)
+anova(richmodel)
+
+rich.emm<-emmeans(richmodel,pairwise~region) #comparing region richness
+rich.emm
+#results: same for all
+rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
+rich.cld 
+
+rich.emm.s<-emmeans(richmodel,pairwise~Site) #comparing site richness
+rich.emm.s
+#results: same for all
+rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
+rich.cld.s
+
+#
+
+##abundance linear mixed effects model
+abunmodel <- lmer(abundance~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 245
+#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+summary(abunmodel)
+AIC(abunmodel)
+anova(abunmodel)
+
+abun.emm<-emmeans(abunmodel,pairwise~region) #comparing region abundance
+abun.emm
+#results: same for all
+abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
+abun.cld 
+
+abun.emm.s<-emmeans(abunmodel,pairwise~Site) #comparing site abundance
+abun.emm.s
+#results: same for all
+abun.cld.s<-multcomp::cld(abun.emm.s, alpha = 0.05, Letters = LETTERS)
+abun.cld.s
+
+#
+
+##diversity linear mixed effects model
+divmodel <- lmer(diversity~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 93
+#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+summary(divmodel)
+AIC(divmodel)
+anova(divmodel)
+
+div.emm<-emmeans(divmodel,pairwise~region) #comparing region diversity
+div.emm
+#results: same for all
+div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
+div.cld 
+
+div.emm.s<-emmeans(divmodel,pairwise~Site) #comparing site diversity
+div.emm.s
+#results: same for all
+div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
+div.cld.s
+
+#
+
+##evenness linear mixed effects model
+evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 1.35
+#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+summary(evenmodel)
+AIC(evenmodel)
+anova(evenmodel)
+
+even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
+even.emm
+#results: same for all (central-south = NA)
+even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
+even.cld 
+
+even.emm.s<-emmeans(evenmodel,pairwise~Site) #comparing site richness
+even.emm.s
+#results: same for all
+even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
+even.cld.s
+
+##
+#site richness by region
+richness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = richness, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="", y="Richness")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+richness.plot
+
+#site abundance by region
+abundance.plot<-ggplot(bees, aes(x = factor(region, level = c("South","Central","North")), y = abundance, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position ="bottom")+
+  labs(title="", x="", y="Abundance")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  #scale_y_continuous(trans="log10")+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+abundance.plot
+
+#site diversity by region
+diversity.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = diversity, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="", y="Shannon diversity")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+diversity.plot
+
+#site evenness by region
+evenness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = evenness, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="Sites by Region", y="Evenness")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+evenness.plot
+
+###
+#mush together plots
+library(ggpubr) 
+bees_boxplot <- ggarrange(richness.plot, abundance.plot, diversity.plot, evenness.plot,
+                             #labels = c("A", "B", "C", "D"),
+                             ncol = 1, nrow = 4,
+                             common.legend = TRUE, legend = "bottom")
+bees_boxplot
+
+pdf("bees_boxplot.pdf", height=8, width=8) #height and width in inches
+bees_boxplot
+dev.off()
+###
+
+#NMDS of bee community 
+library (vegan)
+
+#Create matrix of environmental variables
+env.matrix_bees<-bees[c(1:3,30:35)]
+#create matrix of community variables
+com.matrix_bees<-bees[c(4:29)]
+
+#ordination by NMDS
+NMDS_bees<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
+NMDS_bees
+###stress = 8.8e-05
+stressplot(NMDS_bees)
+
+#plot NMDS for region
+#might need to change colors
+#8 x 13
+plot(NMDS_bees, disp='sites', type="n")
+#title(main="Bee community composition by region", cex.main=1.5)
+#add ellipsoids with ordiellipse
+ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South")
+ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#E69F00",kind="sd", conf=0.95, label=FALSE, show.groups = "North")
+ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#009E73",kind="sd", conf=0.95, label=FALSE, show.groups = "Central") 
+#add data points
+points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="North"),pch=19, col="#E69F00")
+points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="Central"), pch=17, col="#009E73")
+points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="South"), pch=15, col="#CC79A7")
+#add legend
+legend(0.89,2.5, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+
+#bootstrapping and testing for differences between the groups (regions)
+fit<-adonis(com.matrix_bees ~ region, data = env.matrix_bees, permutations = 999, method="bray")
+fit
+#P=0.003
+
+#check assumption of homogeneity of multivariate dispersion 
+#P-value greater than 0.05 means assumption has been met
+distances_data<-vegdist(com.matrix_bees)
+anova(betadisper(distances_data, env.matrix_bees$region))
+#P-value = 0.3521 -- assumes homogeneity of multivariate dispersion
+
+######
+
+#Plant analysis
+
+#bring in plant data
+plants <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/2019%20plants_p.a..csv?token=GHSAT0AAAAAABSFZTB2OJC75GU3NE3AGI2WYS7CP3A",na.strings = NULL)
+summary(plants)
+
+
+###############################
 
 #do all of above again, but with data organized by ORDER
 
-bowls_order <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Bowl_natural_order.csv?token=GHSAT0AAAAAABSFZTB2I25KABWPGWQIGUAAYS5UPCA",na.strings = NULL)
+bowls_order <- read.csv("",na.strings = NULL)
  
-ramps_order <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Ramp_natural_order.csv?token=GHSAT0AAAAAABSFZTB2DWOHVZEZBSMF3FYKYS5UPOQ",na.strings = NULL)
+ramps_order <- read.csv("",na.strings = NULL)
 
-sticky_order <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/Insect%20ID%202019%20-%20Sticky%20card_natural_order.csv?token=GHSAT0AAAAAABSFZTB3QJ7FKN3AJGOCONLAYS5UPYQ",na.strings = NULL)
+sticky_order <- read.csv("",na.strings = NULL)
 
 
 #add trap type as a column on each data file
@@ -619,19 +874,6 @@ anova(betadisper(distances_data, env.matrix$Site))
 
 
 #########
-
-#Plant analysis
-
-#bring in plant data
-plants <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/2019%20plants_p.a..csv?token=GHSAT0AAAAAABSFZTB2OJC75GU3NE3AGI2WYS7CP3A",na.strings = NULL)
-summary(plants)
-
-
-
-
-
-
-
 
 
 ###################################################################################
