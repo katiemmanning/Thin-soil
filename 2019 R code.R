@@ -244,7 +244,7 @@ points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, c
 points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
 points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
 #add legend
-legend(0.89,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+legend(0.955,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
@@ -272,7 +272,7 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="
 points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
 points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
 #add legend
-legend(0.8,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+legend(0.7,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 
 #plot NMDS for Central sites 
 #8 x 13
@@ -287,7 +287,7 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="
 points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
 points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
 #add legend
-legend(0.15,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
+legend(0.40,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
 
 #plot NMDS for Southern sites 
 #8 x 13
@@ -302,7 +302,7 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col=
 points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
 points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
 #add legend
-legend(0.67,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
+legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
 
 #bootstrapping and testing for differences between the groups (sites)
 fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="bray")
@@ -527,14 +527,13 @@ env.matrix_bees<-bees[c(1:3,30:35)]
 com.matrix_bees<-bees[c(4:29)]
 
 #ordination by NMDS
-NMDS_bees<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
+NMDS_bees<-metaMDS(com.matrix_bees, distance="bray", k=2, autotransform=TRUE, trymax=300)
 NMDS_bees
-###stress = 8.8e-05
+###stress =  8.59e-05 
 stressplot(NMDS_bees)
 
-#plot NMDS for region
-#might need to change colors
-#8 x 13
+#plot bee NMDS for region
+#8 x 10
 plot(NMDS_bees, disp='sites', type="n")
 #title(main="Bee community composition by region", cex.main=1.5)
 #add ellipsoids with ordiellipse
@@ -546,12 +545,12 @@ points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="North")
 points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="Central"), pch=17, col="#009E73")
 points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="South"), pch=15, col="#CC79A7")
 #add legend
-legend(0.89,2.5, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+#legend(8.9,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix_bees ~ region, data = env.matrix_bees, permutations = 999, method="bray")
 fit
-#P=0.003
+#P=0.009
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
@@ -570,7 +569,7 @@ summary(plants)
 
 ###############################
 
-#do all of above again, but with data organized by ORDER
+#all of insects again, but with data organized by ORDER
 
 bowls_order <- read.csv("",na.strings = NULL)
  
