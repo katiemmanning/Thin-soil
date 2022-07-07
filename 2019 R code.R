@@ -318,7 +318,7 @@ anova(betadisper(distances_data, env.matrix$Site))
 ######
 
 #Bee analysis (species)
-#bring in data
+#bring in data (presence/absence)
 bee_bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees%20-%20Bowl_species.csv",na.strings = NULL)
 summary(bee_bowls)
 str(bee_bowls) 
@@ -562,9 +562,73 @@ anova(betadisper(distances_data, env.matrix_bees$region))
 
 #Plant analysis
 
-#bring in plant data
-plants <- read.csv("https://raw.githubusercontent.com/BahlaiLab/Manning_K/master/2019%20Built%20by%20Nature/2019%20insect%20ID%20analysis/2019%20Insect%20ID/2019%20plants_p.a..csv?token=GHSAT0AAAAAABSFZTB2OJC75GU3NE3AGI2WYS7CP3A",na.strings = NULL)
+#bring in plant data (presence/absence)
+plants <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20plants_new.csv",na.strings = NULL)
 summary(plants)
+
+#To obtain richness counts
+plants.rowsums <- rowSums(plants[,4:42]>0)
+plants$richness <- plants.rowsums
+
+#To obtain abundance counts
+plants.abun <- rowSums(plants[,4:42])
+plants$abundance <- plants.abun
+
+#load vegan
+library(vegan)
+
+#calculate Shannon diversity
+plants.diversity <-diversity(plants[,4:42])
+plants$diversity <-plants.diversity
+
+#calculate Evenness
+plants.evenness <-plants.diversity/log(specnumber(plants[,4:42]))
+plants$evenness <- plants.evenness
+
+#look at data set
+summary(plants)
+str(plants)
+
+
+###THESE DONT WORK
+library (emmeans) #for pairwise comparisons
+library(lme4)
+library(lmerTest) #to obtain p values
+
+richmodel <- lm(richness~Site+Region,data=plants)  #AIC = 
+#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+summary(richmodel)
+AIC(richmodel)
+anova(richmodel)
+
+rich.emm<-emmeans(richmodel,pairwise~Region) #comparing region richness
+rich.emm
+#results: same for all
+rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
+rich.cld 
+
+rich.emm.s<-emmeans(richmodel,pairwise~Site) #comparing site richness
+rich.emm.s
+#results: same for all
+rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
+rich.cld.s
+
+### ^ doesn't work
+
+#NMDS
+library (vegan)
+
+#Create matrix of environmental variables
+env.matrix_plants<-plants[c(1:3,43:46)]
+#create matrix of community variables
+com.matrix_plants<-plants[c(4:42)]
+
+#ordination by NMDS
+NMDS_plants<-metaMDS(com.matrix_plants, distance="bray", k=2, autotransform=TRUE, trymax=300)
+NMDS_plants
+###stress =  *no convergent solutions
+stressplot(NMDS_plants)
+
 
 
 ###############################
