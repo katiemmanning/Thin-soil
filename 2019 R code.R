@@ -1,13 +1,13 @@
 #insect communities
 #bring in datasets
 
-bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Bowl_natural.csv",na.strings = NULL)
+bowls <- read.csv("",na.strings = NULL)
 summary(bowls)
 str(bowls) 
-ramps <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural.csv",na.strings = NULL)
+ramps <- read.csv("",na.strings = NULL)
 summary(ramps)
 str(ramps)
-sticky <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural.csv",na.strings = NULL)
+sticky <- read.csv("",na.strings = NULL)
 summary(sticky)
 str(sticky)
 
