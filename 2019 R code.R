@@ -62,7 +62,7 @@ library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-richmodel <- lmer(richness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 1060
+richmodel <- lmer(richness~Site:Replicate+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 1060
 #region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
 summary(richmodel)
 AIC(richmodel)
