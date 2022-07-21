@@ -52,8 +52,10 @@ allbugs$evenness <- evenness
 
 #look at data set
 summary(allbugs)
-str(allbugs)
-
+str(allbugs) #trap and region are listed as character 
+allbugs$Trap <- as.factor(allbugs$Trap)
+allbugs$region <- as.factor(allbugs$region)
+str(allbugs) #now trap and region are listed as a factor
 
 ##richness linear mixed effects model
 library (emmeans) #for pairwise comparisons
