@@ -1,13 +1,13 @@
 #insect communities
 #bring in datasets
 
-bowls <- read.csv("",na.strings = NULL)
+bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Bowl_natural.csv",na.strings = NULL)
 summary(bowls)
 str(bowls) 
-ramps <- read.csv("",na.strings = NULL)
+ramps <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural.csv",na.strings = NULL)
 summary(ramps)
 str(ramps)
-sticky <- read.csv("",na.strings = NULL)
+sticky <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural.csv",na.strings = NULL)
 summary(sticky)
 str(sticky)
 
@@ -32,22 +32,22 @@ allbugs$region<-ifelse(allbugs$Site=="WLR", "South",
 str(allbugs)
 
 #To obtain richness counts
-allbugs.rowsums <- rowSums(allbugs[,4:49]>0)
+allbugs.rowsums <- rowSums(allbugs[,5:50]>0)
 allbugs$richness <- allbugs.rowsums
 
 #To obtain abundance counts
-allbugs.abun <- rowSums(allbugs[,4:49])
+allbugs.abun <- rowSums(allbugs[,5:50])
 allbugs$abundance <- allbugs.abun
 
 #load vegan
 library(vegan)
 
 #calculate Shannon diversity
-diversity <-diversity(allbugs[,4:49])
+diversity <-diversity(allbugs[,5:50])
 allbugs$diversity <-diversity
 
 #calculate Evenness
-evenness <-diversity/log(specnumber(allbugs[,4:49]))
+evenness <-diversity/log(specnumber(allbugs[,5:50]))
 allbugs$evenness <- evenness
 
 #look at data set
@@ -62,8 +62,10 @@ library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-richmodel <- lmer(richness~Site:Replicate+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 1060
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+#example from lampyrid
+lam_model<-glm(ADULTS~dd.accum+dd.accum2*(as.factor(year))+TREAT_DESC, offset=TRAPS, data=lampyrid.weather, family="poisson")
+
+richmodel <- lmer(richness~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 1074
 summary(richmodel)
 AIC(richmodel)
 anova(richmodel)
@@ -74,38 +76,115 @@ rich.emm
 rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
 rich.cld 
 
+#can't compare Site with replicate nested
 rich.emm.s<-emmeans(richmodel,pairwise~Site) #comparing site richness
 rich.emm.s
-#results: differences between BFB-DGM, DGM-SSH, WLR-WPR
+#results: 
 rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
 rich.cld.s
+
+#check assumptions
+if (!suppressWarnings(require(nortest))) install.packages("nortest")
+citation("nortest")
+if (!suppressWarnings(require(car))) install.packages("car")
+citation("car")
+if (!suppressWarnings(require(emmeans))) install.packages("emmeans")
+citation("emmeans")
+if (!suppressWarnings(require(bbmle))) install.packages("bbmle")
+citation("bbmle")
+if (!suppressWarnings(require(DHARMa))) install.packages("DHARMa")
+citation("DHARMa")
+if (!suppressWarnings(require(lme4))) install.packages("lme4")
+citation("lme4")
+if (!suppressWarnings(require(ggplot2))) install.packages("ggplot2")
+citation("ggplot2")
+if (!suppressWarnings(require(sjPlot))) install.packages("sjPlot")
+citation("sjPlot")
+if (!suppressWarnings(require(jtools))) install.packages("jtools")
+citation("jtools")
+if (!suppressWarnings(require(interactions))) install.packages("interactions")
+citation("interactions")
+
+dotchart(allbugs$richness, main = "richness", group = allbugs$region) # way to visualize outliers
+
+with(allbugs, ad.test(richness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 1.793e-06
+
+with(allbugs, bartlett.test(richness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.3217
+
+plot(richmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(richmodel))
+qqline(resid(richmodel))
+
+plot(simulateResiduals(richmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.08641
+#dispersion test: p = 0.624
+#outlier test: p = 0.72825
+#no significant problems detected 
+
+densityPlot(rstudent(richmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(richmodel)
+influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 
 #
 
 ##abundance linear mixed effects model
-abunmodel <- lmer(abundance~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 3153
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+abunmodel <- glmer(abundance~region + (1|Date) + Trap + (1|Site:Replicate),data=allbugs, family = negative.binomial(2)) #AIC 2519
+
 summary(abunmodel)
 AIC(abunmodel)
 anova(abunmodel)
 
 abun.emm<-emmeans(abunmodel,pairwise~region) #comparing region abundance
 abun.emm
-#results: same for all
+#results: same btw central-north, different btw central-south and north-south
 abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
 abun.cld 
 
+#can't compare Site with replicate nested
 abun.emm.s<-emmeans(abunmodel,pairwise~Site) #comparing site abundance
 abun.emm.s
-#results: differences btw BAL-DAL, CHA-DAL
+#results: 
 abun.cld.s<-multcomp::cld(abun.emm.s, alpha = 0.05, Letters = LETTERS)
 abun.cld.s
+
+#check assumptions
+dotchart(allbugs$abundance, main = "abundance", group = allbugs$region) # way to visualize outliers
+
+with(allbugs, ad.test(abundance)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = < 2.2e-16
+
+with(allbugs, bartlett.test(abundance ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = < 2.2e-16
+
+plot(abunmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(abunmodel))
+qqline(resid(abunmodel))
+
+plot(simulateResiduals(abunmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.11099
+#dispersion test: p = 0.088
+#outlier test: p = 0.42
+#within group deviations from uniformity significant
+
+densityPlot(rstudent(abunmodel)) # check density estimate of the distribution of residuals
+
+#Can't use with glmer
+# check for outliers influencing the data
+outlierTest(abunmodel)
+influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = 287
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+divmodel <- lmer(diversity~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 284
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel)
@@ -116,17 +195,45 @@ div.emm
 div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
 div.cld 
 
+#can't compare Site with replicate nested
 div.emm.s<-emmeans(divmodel,pairwise~Site) #comparing site diversity
 div.emm.s
-#results: difference between CHA-DAL
+#results: 
 div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
 div.cld.s
+
+#check assumptions
+dotchart(allbugs$diversity, main = "diversity", group = allbugs$region) # way to visualize outliers
+
+with(allbugs, ad.test(diversity)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 0.02046
+
+with(allbugs, bartlett.test(diversity ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.9444
+
+plot(divmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(divmodel))
+qqline(resid(divmodel))
+
+plot(simulateResiduals(divmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.71879
+#dispersion test: p = 0.704
+#outlier test: p = 0.27678
+#within group deviations from uniformity significant
+
+densityPlot(rstudent(divmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(divmodel)
+influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 
 #
 
 ##evenness linear mixed effects model
 evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = -94
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+evenmodel <- lmer(evenness~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = -102
 summary(evenmodel)
 AIC(evenmodel)
 anova(evenmodel)
@@ -137,11 +244,39 @@ even.emm
 even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
 even.cld 
 
+#can't compare Site with replicate nested
 even.emm.s<-emmeans(evenmodel,pairwise~Site) #comparing site richness
 even.emm.s
-#results: difference between CHA-DAL
+#results:
 even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
 even.cld.s
+
+#check assumptions
+dotchart(allbugs$evenness, main = "evenness", group = allbugs$region) # way to visualize outliers
+
+with(allbugs, ad.test(evenness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 4.478e-05
+
+with(allbugs, bartlett.test(evenness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.09482
+
+plot(evenmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(evenmodel))
+qqline(resid(evenmodel))
+
+plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.71879
+#dispersion test: p = 0.704
+#outlier test: p = 0.27678
+#Levene test for homogeneity of variance significant
+
+densityPlot(rstudent(evenmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(evenmodel)
+influenceIndexPlot(evenmodel, vars = c("Cook"), id = list(n = 3))
 
 #######
 #ggplot box plots
