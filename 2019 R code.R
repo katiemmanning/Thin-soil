@@ -756,8 +756,11 @@ NMDS_plants
 stressplot(NMDS_plants)
 
 
+###################################################################################
 
-###############################
+#NOT USING ANYTHING AFTER HERE
+
+######
 
 #all of insects again, but with data organized by ORDER
 
@@ -1063,11 +1066,6 @@ anova(betadisper(distances_data, env.matrix$Site))
 
 
 #########
-
-
-###################################################################################
-
-#NOT USING ANYTHING AFTER HERE
 
 #plot NMDS for traps
 plot(NMDS, disp='sites', type="n")
