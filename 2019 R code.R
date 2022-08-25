@@ -57,45 +57,19 @@ allbugs$Trap <- as.factor(allbugs$Trap)
 allbugs$region <- as.factor(allbugs$region)
 str(allbugs) #now trap and region are listed as a factor
 
-##richness linear mixed effects model
+#models and checking assumptions
 library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-#example from lampyrid
-lam_model<-glm(ADULTS~dd.accum+dd.accum2*(as.factor(year))+TREAT_DESC, offset=TRAPS, data=lampyrid.weather, family="poisson")
-
-richmodel <- lmer(richness~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 1074
-summary(richmodel)
-AIC(richmodel)
-anova(richmodel)
-
-rich.emm<-emmeans(richmodel,pairwise~region) #comparing region richness
-rich.emm
-#results: same for all
-rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
-rich.cld 
-
-#can't compare Site with replicate nested
-rich.emm.s<-emmeans(richmodel,pairwise~Site) #comparing site richness
-rich.emm.s
-#results: 
-rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
-rich.cld.s
-
-#check assumptions
 if (!suppressWarnings(require(nortest))) install.packages("nortest")
 citation("nortest")
 if (!suppressWarnings(require(car))) install.packages("car")
 citation("car")
-if (!suppressWarnings(require(emmeans))) install.packages("emmeans")
-citation("emmeans")
 if (!suppressWarnings(require(bbmle))) install.packages("bbmle")
 citation("bbmle")
 if (!suppressWarnings(require(DHARMa))) install.packages("DHARMa")
 citation("DHARMa")
-if (!suppressWarnings(require(lme4))) install.packages("lme4")
-citation("lme4")
 if (!suppressWarnings(require(ggplot2))) install.packages("ggplot2")
 citation("ggplot2")
 if (!suppressWarnings(require(sjPlot))) install.packages("sjPlot")
@@ -105,6 +79,19 @@ citation("jtools")
 if (!suppressWarnings(require(interactions))) install.packages("interactions")
 citation("interactions")
 
+##richness linear mixed effects model
+richmodel <- lmer(richness~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 1062
+summary(richmodel)
+AIC(richmodel)
+anova(richmodel)
+
+rich.emm<-emmeans(richmodel,pairwise~region) #comparing region richness
+rich.emm
+#results: South-Central are different, no difference between C-N or N-S
+rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
+rich.cld 
+
+#check assumptions
 dotchart(allbugs$richness, main = "richness", group = allbugs$region) # way to visualize outliers
 
 with(allbugs, ad.test(richness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
@@ -120,9 +107,9 @@ qqnorm(resid(richmodel))
 qqline(resid(richmodel))
 
 plot(simulateResiduals(richmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.08641
-#dispersion test: p = 0.624
-#outlier test: p = 0.72825
+#KS test: p = 0.58265
+#dispersion test: p = 0.584
+#outlier test: p = 0.05265
 #no significant problems detected 
 
 densityPlot(rstudent(richmodel)) # check density estimate of the distribution of residuals
@@ -134,7 +121,7 @@ influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##abundance linear mixed effects model
-abunmodel <- glmer(abundance~region + (1|Date) + Trap + (1|Site:Replicate),data=allbugs, family = negative.binomial(2)) #AIC 2519
+abunmodel <- glmer(abundance~region + Date + Trap + (1|Site:Replicate),data=allbugs, family = negative.binomial(2)) #AIC 2501
 
 summary(abunmodel)
 AIC(abunmodel)
@@ -145,13 +132,6 @@ abun.emm
 #results: same btw central-north, different btw central-south and north-south
 abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
 abun.cld 
-
-#can't compare Site with replicate nested
-abun.emm.s<-emmeans(abunmodel,pairwise~Site) #comparing site abundance
-abun.emm.s
-#results: 
-abun.cld.s<-multcomp::cld(abun.emm.s, alpha = 0.05, Letters = LETTERS)
-abun.cld.s
 
 #check assumptions
 dotchart(allbugs$abundance, main = "abundance", group = allbugs$region) # way to visualize outliers
@@ -169,10 +149,10 @@ qqnorm(resid(abunmodel))
 qqline(resid(abunmodel))
 
 plot(simulateResiduals(abunmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.11099
-#dispersion test: p = 0.088
-#outlier test: p = 0.42
-#within group deviations from uniformity significant
+#KS test: p = 0.37758
+#dispersion test: p = 0.024 *sig deviation
+#outlier test: p = 0.56
+#no significant problems detected 
 
 densityPlot(rstudent(abunmodel)) # check density estimate of the distribution of residuals
 
@@ -184,7 +164,7 @@ influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 284
+divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 293
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel)
@@ -194,13 +174,6 @@ div.emm
 #results: same for all
 div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
 div.cld 
-
-#can't compare Site with replicate nested
-div.emm.s<-emmeans(divmodel,pairwise~Site) #comparing site diversity
-div.emm.s
-#results: 
-div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
-div.cld.s
 
 #check assumptions
 dotchart(allbugs$diversity, main = "diversity", group = allbugs$region) # way to visualize outliers
@@ -218,10 +191,10 @@ qqnorm(resid(divmodel))
 qqline(resid(divmodel))
 
 plot(simulateResiduals(divmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.71879
+#KS test: p = 0.69357
 #dispersion test: p = 0.704
-#outlier test: p = 0.27678
-#within group deviations from uniformity significant
+#outlier test: p = 0.72825
+#no significant problems detected  
 
 densityPlot(rstudent(divmodel)) # check density estimate of the distribution of residuals
 
@@ -232,24 +205,16 @@ influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##evenness linear mixed effects model
-evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=allbugs)  #AIC = -94
-evenmodel <- lmer(evenness~region + (1|Date) + Trap + (1|Site:Replicate), data=allbugs)  #AIC = -102
+evenmodel <- lmer(evenness~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = -83
 summary(evenmodel)
 AIC(evenmodel)
 anova(evenmodel)
 
 even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
 even.emm
-#results: same for all
+#results: same btw central-north, different btw C-N and N-S
 even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
 even.cld 
-
-#can't compare Site with replicate nested
-even.emm.s<-emmeans(evenmodel,pairwise~Site) #comparing site richness
-even.emm.s
-#results:
-even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
-even.cld.s
 
 #check assumptions
 dotchart(allbugs$evenness, main = "evenness", group = allbugs$region) # way to visualize outliers
@@ -267,10 +232,10 @@ qqnorm(resid(evenmodel))
 qqline(resid(evenmodel))
 
 plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.71879
+#KS test: p = 0.41025
 #dispersion test: p = 0.704
-#outlier test: p = 0.27678
-#Levene test for homogeneity of variance significant
+#outlier test: p = 1
+#no significant problems detected 
 
 densityPlot(rstudent(evenmodel)) # check density estimate of the distribution of residuals
 
@@ -356,10 +321,34 @@ brewer.pal(n = 9, name = "Paired") #only has 8 colors, but we have 9 sites
 #NMDS of insect community 
 library (vegan)
 
+#bring in data pooled by site
+bowls_pooled <- read.csv("",na.strings = NULL)
+ramps_pooled <- read.csv("",na.strings = NULL)
+sticky_pooled <- read.csv("",na.strings = NULL)
+
+#add trap type as a column on each data file
+bowls_pooled$Trap="bowl"
+ramps_pooled$Trap="ramp"
+sticky_pooled$Trap="sticky"
+
+#combine data tables 
+bowlramp_pooled <- rbind.fill (bowls_pooled, ramps_pooled)
+allbugs_pooled <-rbind.fill (bowlramp_pooled, sticky_pooled)
+
+#add column for region (south central north)
+allbugs_pooled$region<-ifelse(allbugs_pooled$Site=="WLR", "South",
+                       ifelse(allbugs_pooled$Site=="WPR", "South",
+                              ifelse(allbugs_pooled$Site=="SNY", "South",
+                                     ifelse(allbugs_pooled$Site=="DAL", "North", 
+                                            ifelse(allbugs_pooled$Site=="BAL", "North",
+                                                   ifelse(allbugs_pooled$Site == "CHA", "North", "Central")
+                                            )))))
+str(allbugs_pooled)
+
 #Create matrix of environmental variables
-env.matrix<-allbugs[c(1:3,50:55)]
+env.matrix<-allbugs_pooled[c(1:4,51:52)]
 #create matrix of community variables
-com.matrix<-allbugs[c(4:49)]
+com.matrix<-allbugs_pooled[c(5:50)]
 
 #ordination by NMDS
 NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
