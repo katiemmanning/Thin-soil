@@ -322,9 +322,9 @@ brewer.pal(n = 9, name = "Paired") #only has 8 colors, but we have 9 sites
 library (vegan)
 
 #bring in data pooled by site
-bowls_pooled <- read.csv("",na.strings = NULL)
-ramps_pooled <- read.csv("",na.strings = NULL)
-sticky_pooled <- read.csv("",na.strings = NULL)
+bowls_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Bowl_natural_pooled.csv",na.strings = NULL)
+ramps_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural_pooled.csv",na.strings = NULL)
+sticky_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural_pooled.csv",na.strings = NULL)
 
 #add trap type as a column on each data file
 bowls_pooled$Trap="bowl"
@@ -346,14 +346,14 @@ allbugs_pooled$region<-ifelse(allbugs_pooled$Site=="WLR", "South",
 str(allbugs_pooled)
 
 #Create matrix of environmental variables
-env.matrix<-allbugs_pooled[c(1:4,51:52)]
+env.matrix<-allbugs_pooled[c(1:2,49:50)]
 #create matrix of community variables
-com.matrix<-allbugs_pooled[c(5:50)]
+com.matrix<-allbugs_pooled[c(3:48)]
 
 #ordination by NMDS
 NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
 NMDS
-###stress = 0.27
+###stress = 0.24
 stressplot(NMDS)
 
 #plot NMDS for region
@@ -375,13 +375,13 @@ legend(0.955,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
 fit
-#P=0.001
+#P=0.002
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$region))
-#P-value = 0.7096 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.8873 -- assumes homogeneity of multivariate dispersion
 
 ###
 
