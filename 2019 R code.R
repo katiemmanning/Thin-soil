@@ -61,6 +61,8 @@ str(allbugs) #now trap and region are listed as a factor
 library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
+library (multcompView) #to view letters
+library (car) #for Anova (which is needed because of negative binomial)
 
 if (!suppressWarnings(require(nortest))) install.packages("nortest")
 citation("nortest")
@@ -83,7 +85,7 @@ citation("interactions")
 richmodel <- lmer(richness~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 1062
 summary(richmodel)
 AIC(richmodel)
-anova(richmodel)
+Anova(richmodel) #region not sig 
 
 rich.emm<-emmeans(richmodel,pairwise~region) #comparing region richness
 rich.emm
@@ -125,7 +127,7 @@ abunmodel <- glmer(abundance~region + Date + Trap + (1|Site:Replicate),data=allb
 
 summary(abunmodel)
 AIC(abunmodel)
-anova(abunmodel)
+Anova(abunmodel) #region sig
 
 abun.emm<-emmeans(abunmodel,pairwise~region) #comparing region abundance
 abun.emm
@@ -167,7 +169,7 @@ influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 293
 summary(divmodel)
 AIC(divmodel)
-anova(divmodel)
+Anova(divmodel) #region sig
 
 div.emm<-emmeans(divmodel,pairwise~region) #comparing region diversity
 div.emm
@@ -208,7 +210,7 @@ influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 evenmodel <- lmer(evenness~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = -83
 summary(evenmodel)
 AIC(evenmodel)
-anova(evenmodel)
+Anova(evenmodel) #region sig
 
 even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
 even.emm
@@ -383,6 +385,15 @@ distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$region))
 #P-value = 0.8873 -- assumes homogeneity of multivariate dispersion
 
+install.packages("devtools")
+library(devtools)
+install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library(pairwiseAdonis)
+citation("pairwiseAdonis")
+
+pairwise.adonis(com.matrix, env.matrix$region) #south-central sig
+
+
 ###
 
 #plot NMDS for Northern sites 
@@ -433,18 +444,20 @@ legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1
 #bootstrapping and testing for differences between the groups (sites)
 fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="bray")
 fit
-#P=0.001
+#P= > 0.05 -- not sig
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$Site))
-#P-value = 0.1769 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.931 -- assumes homogeneity of multivariate dispersion
+
+pairwise.adonis(com.matrix, env.matrix$Site) #none sig
 
 ######
 
-#Bee analysis (species)
-#bring in data (presence/absence)
+#Bee analysis (species/genus)
+#bring in data 
 bee_bowls <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees%20-%20Bowl_species.csv",na.strings = NULL)
 summary(bee_bowls)
 str(bee_bowls) 
@@ -493,14 +506,12 @@ bees$evenness <- evenness
 summary(bees)
 str(bees)
 
-
 ##richness linear mixed effects model
 library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-richmodel <- lmer(richness~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 179
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+richmodel <- lm(richness~region+Date+Trap+Site, data=bees)  #AIC = 171
 summary(richmodel)
 AIC(richmodel)
 anova(richmodel)
@@ -517,11 +528,37 @@ rich.emm.s
 rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
 rich.cld.s
 
+#check assumptions
+dotchart(bees$richness, main = "richness", group = bees$region) # way to visualize outliers
+
+with(bees, ad.test(richness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 2.2e-16
+
+with(bees, bartlett.test(richness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.0001
+
+plot(richmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(richmodel))
+qqline(resid(richmodel))
+
+plot(simulateResiduals(richmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.46063
+#dispersion test: p = 0.168
+#outlier test: p = 1
+#no significant problems detected 
+
+densityPlot(rstudent(richmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(richmodel)
+influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
+
 #
 
 ##abundance linear mixed effects model
-abunmodel <- lmer(abundance~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 245
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+abunmodel <- lm(abundance~region+Date+Trap+Site, data=bees)  #AIC = 252
 summary(abunmodel)
 AIC(abunmodel)
 anova(abunmodel)
@@ -538,11 +575,37 @@ abun.emm.s
 abun.cld.s<-multcomp::cld(abun.emm.s, alpha = 0.05, Letters = LETTERS)
 abun.cld.s
 
+#check assumptions
+dotchart(bees$abundance, main = "abundance", group = bees$region) # way to visualize outliers
+
+with(bees, ad.test(abundance)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 5.013e-13
+
+with(bees, bartlett.test(abundance ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.00099 
+
+plot(abunmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(abunmodel))
+qqline(resid(abunmodel))
+
+plot(simulateResiduals(abunmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.06964
+#dispersion test: p = 0.168
+#outlier test: p = 0.3611
+#no significant problems detected 
+
+densityPlot(rstudent(abunmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(abunmodel)
+influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
+
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 93
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+divmodel <- lmer(diversity~region+Date+Trap+Site,data=bees)  #AIC = 293
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel)
@@ -559,18 +622,44 @@ div.emm.s
 div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
 div.cld.s
 
+#check assumptions
+dotchart(bees$diversity, main = "diversity", group = bees$region) # way to visualize outliers
+
+with(bees, ad.test(diversity)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = < 2.2e-16
+
+with(bees, bartlett.test(diversity ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.036
+
+plot(divmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(divmodel))
+qqline(resid(divmodel))
+
+plot(simulateResiduals(divmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.69357
+#dispersion test: p = 0.704
+#outlier test: p = 0.72825
+#no significant problems detected  
+
+densityPlot(rstudent(divmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(divmodel)
+influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
+
 #
 
 ##evenness linear mixed effects model
-evenmodel <- lmer(evenness~Site+region+(1|Date)+(1|Trap),data=bees)  #AIC = 1.35
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
+evenmodel <- lmer(evenness~region+Date+Trap+Site,data=bees)  #AIC = -83
 summary(evenmodel)
 AIC(evenmodel)
 anova(evenmodel)
 
 even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
 even.emm
-#results: same for all (central-south = NA)
+#results: different for C-S and N-S, same for C-N
 even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
 even.cld 
 
@@ -580,7 +669,35 @@ even.emm.s
 even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
 even.cld.s
 
+#check assumptions
+dotchart(bees$evenness, main = "evenness", group = bees$region) # way to visualize outliers
+
+with(bees, ad.test(evenness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
+#p-value = 0.00028
+
+with(bees, bartlett.test(evenness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
+#p-value = 0.1592
+
+plot(evenmodel) # check distribution of residuals
+
+# check normality with these figures, are there outliers at either end
+qqnorm(resid(evenmodel))
+qqline(resid(evenmodel))
+
+plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
+#KS test: p = 0.41025
+#dispersion test: p = 0.704
+#outlier test: p = 1
+#no significant problems detected 
+
+densityPlot(rstudent(evenmodel)) # check density estimate of the distribution of residuals
+
+# check for outliers influencing the data
+outlierTest(evenmodel)
+influenceIndexPlot(evenmodel, vars = c("Cook"), id = list(n = 3))
+
 ##
+
 #site richness by region
 richness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = richness, fill=Site))+
   geom_boxplot()+
@@ -655,7 +772,7 @@ com.matrix_bees<-bees[c(4:29)]
 #ordination by NMDS
 NMDS_bees<-metaMDS(com.matrix_bees, distance="bray", k=2, autotransform=TRUE, trymax=300)
 NMDS_bees
-###stress =  8.59e-05 
+###stress =  8.59e-05 -- insufficient data
 stressplot(NMDS_bees)
 
 #plot bee NMDS for region
@@ -676,13 +793,125 @@ points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="South")
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix_bees ~ region, data = env.matrix_bees, permutations = 999, method="bray")
 fit
-#P=0.009
+#P=0.001
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix_bees)
 anova(betadisper(distances_data, env.matrix_bees$region))
 #P-value = 0.3521 -- assumes homogeneity of multivariate dispersion
+
+pairwise.adonis(com.matrix_bees, env.matrix_bees$region) #none sig
+pairwise.adonis(com.matrix_bees, env.matrix_bees$Site) #none sig
+
+###
+
+#species accumulation
+library (BiodiversityR)
+library(ggplot2)
+
+#separate bees by region
+#bring in data
+
+north <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees_north.csv",na.strings = NULL)
+central <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees_central.csv",na.strings = NULL)
+south <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20bees_south.csv",na.strings = NULL)
+
+#individual curves for each region
+north.com.matrix<-north[c(4:29)]
+north_curve<-accumresult(north.com.matrix, method = "exact", permutations = 1000)
+
+central.com.matrix<-central[c(4:29)]
+central_curve<-accumresult(central.com.matrix, method = "exact", permutations = 1000)
+
+south.com.matrix<-south[c(4:29)]
+south_curve<-accumresult(south.com.matrix, method = "exact", permutations = 1000)
+
+
+#first-order jackknife estimates are based on the number of singletons
+#second-order jackknife estimates are based on the number of singletons and doubletons
+
+#calculates species richness for each sample
+specnumber(com.matrix_bees) #ranges from 1 to 6
+
+#calculates species richness by treatment (region)
+specnumber(com.matrix_bees, groups = bees$region) #north=5; central=19; south=16
+
+#total richness and jackknife
+rich <- diversityresult(com.matrix_bees, y=NULL, index = "richness")
+rich # 26
+j1 <- diversityresult(com.matrix_bees, y=NULL, index = "jack1")
+j1 # 37.785714
+#69%
+j2 <- diversityresult(com.matrix_bees, y=NULL, index = "jack2")
+j2 # 45.57013
+#57%
+
+#north jackknife; richness = 5
+j1.n <- diversityresult(north.com.matrix, y=NULL, index = "jack1")
+j1.n # 6.8
+#74%
+j2.n <- diversityresult(north.com.matrix, y=NULL, index = "jack2")
+j2.n # 7.6888889
+#65%
+
+#central jackknife; richness = 19
+j1.c <- diversityresult(central.com.matrix, y=NULL, index = "jack1")
+j1.c # 26.733333
+#71%
+j2.c <- diversityresult(central.com.matrix, y=NULL, index = "jack2")
+j2.c # 32.397701
+#59%
+
+#south jackknife; richness = 16
+j1.s <- diversityresult(south.com.matrix, y=NULL, index = "jack1")
+j1.s # 25.375
+#63%
+j2.s <- diversityresult(south.com.matrix, y=NULL, index = "jack2")
+j2.s # 32.491667
+#49%
+
+#BiodiversityR::accumcomp
+Accum.1_functional <- accumcomp(com.matrix_bees, y=env.matrix_bees, factor='region', 
+                                method='random', conditioned=FALSE, plotit=FALSE)
+Accum.1_functional
+
+#BiodiversityR::accumcomp.long
+accum.long1_functional <- accumcomp.long(Accum.1_functional, ci=NA, label.freq=5)
+head(accum.long1_functional)
+
+#plot
+#empty canvas
+BioR.theme <- theme(
+  panel.background = element_blank(),
+  panel.border = element_blank(),
+  panel.grid = element_blank(),
+  axis.line = element_line("gray25"),
+  text = element_text(size = 12),
+  axis.text = element_text(size = 10, colour = "gray25"),
+  axis.title = element_text(size = 14, colour = "gray25"),
+  legend.title = element_text(size = 14),
+  legend.text = element_text(size = 14),
+  legend.key = element_blank())
+
+accum <- ggplot(data=accum.long1_functional, aes(x = Sites, y = Richness, ymax = UPR, ymin = LWR)) + 
+  scale_x_continuous(expand=c(0, 1), sec.axis = dup_axis(labels=NULL, name=NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +
+  scale_color_manual(values=c("#009E73","#E69F00","#F0E442","#CC79A7"))+
+  scale_shape_manual(values=c(19,17,15,25))+
+  geom_line(aes(colour=Grouping), size=0.1) +
+  geom_ribbon(aes(colour=Grouping, fill=after_scale(alpha(colour, 0.3))), 
+              show.legend=FALSE, linetype = 0) + 
+  geom_point(data=subset(accum.long1_functional, labelit==TRUE), 
+             aes(colour=Grouping, shape=Grouping), size=3) +
+  BioR.theme +
+  labs(x = "", y = "Richness", colour = "region", shape = "region")
+accum
+
+pdf("accum curve.pdf", height=6, width=8) #height and width in inches
+accum
+dev.off()
+
 
 ######
 
