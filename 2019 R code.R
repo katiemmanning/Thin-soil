@@ -372,12 +372,12 @@ points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, c
 points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
 points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
 #add legend
-legend(0.955,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+legend(1.32,1.17, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
 fit
-#P=0.002
+#P=0.001
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
@@ -605,7 +605,7 @@ influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~region+Date+Trap+Site,data=bees)  #AIC = 293
+divmodel <- lm(diversity~region+Date+Trap+Site,data=bees)  #AIC = 67
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel)
@@ -638,9 +638,9 @@ qqnorm(resid(divmodel))
 qqline(resid(divmodel))
 
 plot(simulateResiduals(divmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.69357
-#dispersion test: p = 0.704
-#outlier test: p = 0.72825
+#KS test: p = 0.56221
+#dispersion test: p = 0.168
+#outlier test: p = 1
 #no significant problems detected  
 
 densityPlot(rstudent(divmodel)) # check density estimate of the distribution of residuals
@@ -652,14 +652,14 @@ influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##evenness linear mixed effects model
-evenmodel <- lmer(evenness~region+Date+Trap+Site,data=bees)  #AIC = -83
+evenmodel <- lm(evenness~region+Date+Trap+Site,data=bees)  #AIC = -34
 summary(evenmodel)
 AIC(evenmodel)
 anova(evenmodel)
 
 even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
 even.emm
-#results: different for C-S and N-S, same for C-N
+#results: same for all
 even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
 even.cld 
 
@@ -685,8 +685,8 @@ qqnorm(resid(evenmodel))
 qqline(resid(evenmodel))
 
 plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.41025
-#dispersion test: p = 0.704
+#KS test: p = 0.44695
+#dispersion test: p = 0.088
 #outlier test: p = 1
 #no significant problems detected 
 
