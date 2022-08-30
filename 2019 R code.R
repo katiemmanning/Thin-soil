@@ -919,31 +919,14 @@ dev.off()
 
 #bring in plant data (presence/absence)
 plants <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20plants_new.csv",na.strings = NULL)
-summary(plants)
 
-#To obtain richness counts
+#To obtain richness counts -- number of plants at each site
 plants.rowsums <- rowSums(plants[,4:42]>0)
 plants$richness <- plants.rowsums
-
-#To obtain abundance counts
-plants.abun <- rowSums(plants[,4:42])
-plants$abundance <- plants.abun
-
-#load vegan
-library(vegan)
-
-#calculate Shannon diversity
-plants.diversity <-diversity(plants[,4:42])
-plants$diversity <-plants.diversity
-
-#calculate Evenness
-plants.evenness <-plants.diversity/log(specnumber(plants[,4:42]))
-plants$evenness <- plants.evenness
 
 #look at data set
 summary(plants)
 str(plants)
-
 
 ###THESE DONT WORK
 library (emmeans) #for pairwise comparisons
@@ -974,7 +957,7 @@ rich.cld.s
 library (vegan)
 
 #Create matrix of environmental variables
-env.matrix_plants<-plants[c(1:3,43:46)]
+env.matrix_plants<-plants[c(1:3)]
 #create matrix of community variables
 com.matrix_plants<-plants[c(4:42)]
 
@@ -984,7 +967,22 @@ NMDS_plants
 ###stress =  *no convergent solutions
 stressplot(NMDS_plants)
 
+#indicator species analysis
+library (indicspecies)
 
+abund = plants[,4:ncol(plants)]
+region = plants$Region
+site = plants$Site
+
+inv.region = multipatt(abund, region, func = "r.g", control = how(nperm=9999))
+summary (inv.region)
+#Aster for central
+#Gaultheria procumbens and Pinus virginiana for south
+#none for north
+
+inv.site = multipatt(abund, site, func = "r.g", control = how(nperm=9999))
+summary (inv.site)
+#none
 ###################################################################################
 
 #NOT USING ANYTHING AFTER HERE
