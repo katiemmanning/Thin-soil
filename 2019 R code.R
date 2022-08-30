@@ -983,6 +983,8 @@ summary (inv.region)
 inv.site = multipatt(abund, site, func = "r.g", control = how(nperm=9999))
 summary (inv.site)
 #none
+
+
 ###################################################################################
 
 #NOT USING ANYTHING AFTER HERE
