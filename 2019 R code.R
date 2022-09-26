@@ -697,6 +697,7 @@ outlierTest(evenmodel)
 influenceIndexPlot(evenmodel, vars = c("Cook"), id = list(n = 3))
 
 ##
+library (ggplot2)
 
 #site richness by region
 richness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = richness, fill=Site))+
@@ -897,7 +898,7 @@ BioR.theme <- theme(
 accum <- ggplot(data=accum.long1_functional, aes(x = Sites, y = Richness, ymax = UPR, ymin = LWR)) + 
   scale_x_continuous(expand=c(0, 1), sec.axis = dup_axis(labels=NULL, name=NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +
-  scale_color_manual(values=c("#009E73","#E69F00","#F0E442","#CC79A7"))+
+  scale_color_manual(values=c("#009E73","#E69F00","#CC79A7"))+
   scale_shape_manual(values=c(19,17,15,25))+
   geom_line(aes(colour=Grouping), size=0.1) +
   geom_ribbon(aes(colour=Grouping, fill=after_scale(alpha(colour, 0.3))), 
@@ -905,7 +906,7 @@ accum <- ggplot(data=accum.long1_functional, aes(x = Sites, y = Richness, ymax =
   geom_point(data=subset(accum.long1_functional, labelit==TRUE), 
              aes(colour=Grouping, shape=Grouping), size=3) +
   BioR.theme +
-  labs(x = "", y = "Richness", colour = "region", shape = "region")
+  labs(x = "Number of Samples", y = "Bee Richness", colour = "region", shape = "region")
 accum
 
 pdf("accum curve.pdf", height=6, width=8) #height and width in inches
