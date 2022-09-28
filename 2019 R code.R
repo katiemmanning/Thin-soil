@@ -328,12 +328,19 @@ bowls_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-s
 ramps_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural_pooled.csv",na.strings = NULL)
 sticky_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural_pooled.csv",na.strings = NULL)
 
+#standardize trap days because sites had different numbers of traps
+#[(trap catch/total number of days trap was operational) x (highest number of trap x out for 2 days)]
+#sticky cards [(trap catch/2) x 12]
+
+#trying to do on excel
+
 #add trap type as a column on each data file
 bowls_pooled$Trap="bowl"
 ramps_pooled$Trap="ramp"
 sticky_pooled$Trap="sticky"
 
 #combine data tables 
+library(plyr)
 bowlramp_pooled <- rbind.fill (bowls_pooled, ramps_pooled)
 allbugs_pooled <-rbind.fill (bowlramp_pooled, sticky_pooled)
 
@@ -347,8 +354,8 @@ allbugs_pooled$region<-ifelse(allbugs_pooled$Site=="WLR", "South",
                                             )))))
 str(allbugs_pooled)
 
-#Create matrix of environmental variables
-env.matrix<-allbugs_pooled[c(1:2,49:50)]
+#Create matrix of environmental variables    ##does not include standardized abundance
+env.matrix<-allbugs_pooled[c(1:2,51:52)]
 #create matrix of community variables
 com.matrix<-allbugs_pooled[c(3:48)]
 
@@ -392,7 +399,6 @@ library(pairwiseAdonis)
 citation("pairwiseAdonis")
 
 pairwise.adonis(com.matrix, env.matrix$region) #south-central sig
-
 
 ###
 
@@ -453,6 +459,90 @@ anova(betadisper(distances_data, env.matrix$Site))
 #P-value = 0.931 -- assumes homogeneity of multivariate dispersion
 
 pairwise.adonis(com.matrix, env.matrix$Site) #none sig
+
+#multi-panel NMDS with region and sites
+
+library(ggvegan)
+
+pdf("NMDS.pdf", height=9, width=14)
+par(mfrow=c(2,2), mar=c(4.1, 4.8, 1.5, 8.1),xpd=TRUE) 
+
+plot(NMDS, disp='sites', type="n")
+#title(main="Arthropod community composition by region", cex.main=1.5)
+title(main="Region", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South")
+ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#E69F00",kind="sd", conf=0.95, label=FALSE, show.groups = "North")
+ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#009E73",kind="sd", conf=0.95, label=FALSE, show.groups = "Central") 
+points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, col="#E69F00")
+points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
+points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
+legend(1.32,1.17, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+
+plot(NMDS, disp='sites', type="n")
+title(main="North", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
+points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="#A6CEE3")
+points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
+points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
+legend(0.7,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+
+plot(NMDS, disp='sites', type="n")
+title(main="Central", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
+points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="#FDBF6F")
+points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
+points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
+legend(0.40,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
+
+plot(NMDS, disp='sites', type="n")
+title(main="South", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
+points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col="#CAB2D6")
+points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
+points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
+legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
+dev.off()
+
+#multi-panel NMDS with just sites
+pdf("site NMDS.pdf", height=9, width=14)
+par(mfrow=c(3,1), mar=c(4.1, 4.8, 1.5, 8.1),xpd=TRUE) 
+
+plot(NMDS, disp='sites', type="n")
+title(main="North", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
+points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="#A6CEE3")
+points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
+points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
+legend(0.7,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+
+plot(NMDS, disp='sites', type="n")
+title(main="Central", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
+points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="#FDBF6F")
+points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
+points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
+legend(0.40,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
+
+plot(NMDS, disp='sites', type="n")
+title(main="South", adj = 0.01, line = -2, cex.main=2.5)
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
+ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
+points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col="#CAB2D6")
+points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
+points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
+legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
+dev.off()
 
 ######
 
@@ -1456,170 +1546,4 @@ fit
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix_s)
 anova(betadisper(distances_data, env.matrix_s$region))
-#P-value = 0.32 -- assumes homogeneity of multivariate dispersion
-
-###
-
-#plot bowl NMDS by sites 
-plot(NMDS_b, disp='sites', type="n")
-title(main="", adj = 0.05, line = -2, cex.main=1.5)
-#add ellipsoids with ordiellipse
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
-ordiellipse(NMDS_b, env.matrix_b$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
-#add data points
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="BAL"),pch=19, col="#A6CEE3")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="CHA"), pch=17, col="#B2DF8A")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="DAL"), pch=15, col="#33A02C")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="SSH"),pch=19, col="#FDBF6F")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="DGM"), pch=17, col="#FB9A99")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="BFB"), pch=15, col="#1F78B4")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="WPR"), pch=17, col="#CAB2D6")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="SNY"), pch=15, col="#E31A1C")
-points(NMDS_b, display="sites", select=which(env.matrix_b$Site=="WLR"),pch=19, col="#FF7F00")
-
-#bootstrapping and testing for differences between the groups (sites - bowl)
-fit<-adonis(com.matrix_b ~ Site, data = env.matrix_b, permutations = 999, method="bray")
-fit
-#P=0.001
-
-#check assumption of homogeneity of multivariate dispersion 
-#P-value greater than 0.05 means assumption has been met
-distances_data<-vegdist(com.matrix_b)
-anova(betadisper(distances_data, env.matrix_b$Site))
-#P-value = 0.3171 -- assumes homogeneity of multivariate dispersion
-
-#
-
-#plot ramp NMDS by sites 
-plot(NMDS_r, disp='sites', type="n")
-title(main="", adj = 0.05, line = -2, cex.main=1.5)
-#add ellipsoids with ordiellipse
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
-ordiellipse(NMDS_r, env.matrix_r$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
-#add data points
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="BAL"),pch=19, col="#A6CEE3")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="CHA"), pch=17, col="#B2DF8A")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="DAL"), pch=15, col="#33A02C")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="SSH"),pch=19, col="#FDBF6F")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="DGM"), pch=17, col="#FB9A99")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="BFB"), pch=15, col="#1F78B4")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="WPR"), pch=17, col="#CAB2D6")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="SNY"), pch=15, col="#E31A1C")
-points(NMDS_r, display="sites", select=which(env.matrix_r$Site=="WLR"),pch=19, col="#FF7F00")
-
-#bootstrapping and testing for differences between the groups (sites - ramp)
-fit<-adonis(com.matrix_r ~ Site, data = env.matrix_r, permutations = 999, method="bray")
-fit
-#P=0.001
-
-#check assumption of homogeneity of multivariate dispersion 
-#P-value greater than 0.05 means assumption has been met
-distances_data<-vegdist(com.matrix_r)
-anova(betadisper(distances_data, env.matrix_r$Site))
-#P-value = 0.0086 -- CANNOT assume homogeneity of multivariate dispersion
-
-#
-
-#plot sticky card NMDS by sites 
-plot(NMDS_s, disp='sites', type="n")
-title(main="", adj = 0.05, line = -2, cex.main=1.5)
-#add ellipsoids with ordiellipse
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
-ordiellipse(NMDS_s, env.matrix_s$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
-#add data points
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="BAL"),pch=19, col="#A6CEE3")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="CHA"), pch=17, col="#B2DF8A")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="DAL"), pch=15, col="#33A02C")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="SSH"),pch=19, col="#FDBF6F")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="DGM"), pch=17, col="#FB9A99")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="BFB"), pch=15, col="#1F78B4")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="WPR"), pch=17, col="#CAB2D6")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="SNY"), pch=15, col="#E31A1C")
-points(NMDS_s, display="sites", select=which(env.matrix_s$Site=="WLR"),pch=19, col="#FF7F00")
-
-#bootstrapping and testing for differences between the groups (sites - sticky cards)
-fit<-adonis(com.matrix_s ~ Site, data = env.matrix_s, permutations = 999, method="bray")
-fit
-#P=0.001
-
-#check assumption of homogeneity of multivariate dispersion 
-#P-value greater than 0.05 means assumption has been met
-distances_data<-vegdist(com.matrix_s)
-anova(betadisper(distances_data, env.matrix_s$Site))
-#P-value = 0.04 -- CANNOT assume homogeneity of multivariate dispersion
-#########
-
-#LMs by trap type
-
-#bowl
-#To obtain richness counts
-bowls.rowsums <- rowSums(bowls[,4:63]>0)
-bowls$richness <- bowls.rowsums
-summary(bowls)
-str(bowls)
-
-richmodel_b <- lm(richness~Site+Data+region,data=bowls)  #AIC = 262.09
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
-summary(richmodel_b)
-anova(richmodel_b)
-AIC(richmodel_b)
-emmeans(richmodel_b,pairwise~region) #comparing region richness
-#results: sig diff btw Central-South
-emmeans(richmodel_b,pairwise~Site) #comparing site richness
-#results: sig differences btw BFB-DAL, BFB-WLR
-
-#ramp
-#To obtain richness counts
-ramps.rowsums <- rowSums(ramps[,4:63]>0)
-ramps$richness <- ramps.rowsums
-summary(ramps)
-str(ramps)
-
-richmodel_r <- lm(richness~Site+Date+region,data=ramps)  #AIC = 311.33
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
-summary(richmodel_r)
-anova(richmodel_r)
-AIC(richmodel_r)
-emmeans(richmodel_r,pairwise~region) #comparing region richness
-#results: no sig differences
-emmeans(richmodel_r,pairwise~Site) #comparing site richness
-#results: sig differences - BFB-DGM, BFB-BAL, BFB-SNY, BFB-WLR
-
-#sticky cards
-#To obtain richness counts
-sticky.rowsums <- rowSums(sticky[,4:63]>0)
-sticky$richness <- sticky.rowsums
-summary(sticky)
-str(sticky)
-
-richmodel_s <- lm(richness~Site+Date+region,data=sticky)  #AIC = 517.82
-#region doesn't do anything in GLM, but you need it in to get values for site comparisons (and then can also get region comparisons)
-summary(richmodel_s)
-anova(richmodel_s)
-AIC(richmodel_s)
-emmeans(richmodel_s,pairwise~region) #comparing region richness
-#results: sig diff btw Central-North & Central-South
-emmeans(richmodel_s,pairwise~Site) #comparing site richness
-#results: sig differences - BFB-BAL, BFB-CHA, BFB-SNY, BFB-WLR, DGM-WLR, SSH-BAL, SSH-CHA, SSH-SNY, SSH-WLR, BAL-DAL, CHA-DAL, DAL-SNY, DAL-WLR, WLR-WPR
-
+#P-value = 0.32 -- assumes homogeneity of multivariate
