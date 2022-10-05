@@ -328,12 +328,6 @@ bowls_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-s
 ramps_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural_pooled.csv",na.strings = NULL)
 sticky_pooled <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural_pooled.csv",na.strings = NULL)
 
-#standardize trap days because sites had different numbers of traps
-#[(trap catch/total number of days trap was operational) x (highest number of trap x out for 2 days)]
-#sticky cards [(trap catch/2) x 12]
-
-#trying to do on excel
-
 #add trap type as a column on each data file
 bowls_pooled$Trap="bowl"
 ramps_pooled$Trap="ramp"
@@ -354,15 +348,21 @@ allbugs_pooled$region<-ifelse(allbugs_pooled$Site=="WLR", "South",
                                             )))))
 str(allbugs_pooled)
 
-#Create matrix of environmental variables    ##does not include standardized abundance
-env.matrix<-allbugs_pooled[c(1:2,51:52)]
+#Create matrix of environmental variables    
+env.matrix<-allbugs_pooled[c(1:2,49:50)]
+
 #create matrix of community variables
 com.matrix<-allbugs_pooled[c(3:48)]
+
+#change to presence/absence
+com.matrix[com.matrix > 0] <- 1
+str(com.matrix)
+rowSums(com.matrix)
 
 #ordination by NMDS
 NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
 NMDS
-###stress = 0.24
+###stress = 0.22
 stressplot(NMDS)
 
 #plot NMDS for region
@@ -379,7 +379,7 @@ points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, c
 points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
 points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
 #add legend
-legend(1.32,1.17, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
+legend(0.888,0.83, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
 fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
@@ -390,7 +390,7 @@ fit
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$region))
-#P-value = 0.8873 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.001 -- cannot assume homogeneity of multivariate dispersion
 
 install.packages("devtools")
 library(devtools)
@@ -450,68 +450,22 @@ legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1
 #bootstrapping and testing for differences between the groups (sites)
 fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="bray")
 fit
-#P= > 0.05 -- not sig
+#P= 0.01
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
 distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$Site))
-#P-value = 0.931 -- assumes homogeneity of multivariate dispersion
+#P-value = 0.1672 -- assumes homogeneity of multivariate dispersion
 
 pairwise.adonis(com.matrix, env.matrix$Site) #none sig
 
-#multi-panel NMDS with region and sites
-
-library(ggvegan)
-
-pdf("NMDS.pdf", height=9, width=14)
-par(mfrow=c(2,2), mar=c(4.1, 4.8, 1.5, 8.1),xpd=TRUE) 
-
-plot(NMDS, disp='sites', type="n")
-#title(main="Arthropod community composition by region", cex.main=1.5)
-title(main="Region", adj = 0.01, line = -2, cex.main=2.5)
-ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South")
-ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#E69F00",kind="sd", conf=0.95, label=FALSE, show.groups = "North")
-ordiellipse(NMDS, env.matrix$region, draw="polygon", col="#009E73",kind="sd", conf=0.95, label=FALSE, show.groups = "Central") 
-points(NMDS, display="sites", select=which(env.matrix$region=="North"),pch=19, col="#E69F00")
-points(NMDS, display="sites", select=which(env.matrix$region=="Central"), pch=17, col="#009E73")
-points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, col="#CC79A7")
-legend(1.32,1.17, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
-
-plot(NMDS, disp='sites', type="n")
-title(main="North", adj = 0.01, line = -2, cex.main=2.5)
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#B2DF8A",kind="sd", conf=0.95, label=FALSE, show.groups = "CHA") 
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#33A02C",kind="sd", conf=0.95, label=FALSE, show.groups = "DAL")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#A6CEE3",kind="sd", conf=0.95, label=FALSE, show.groups = "BAL")
-points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="#A6CEE3")
-points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
-points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
-legend(0.7,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-
-plot(NMDS, disp='sites', type="n")
-title(main="Central", adj = 0.01, line = -2, cex.main=2.5)
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FB9A99",kind="sd", conf=0.95, label=FALSE, show.groups = "DGM")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#1F78B4",kind="sd", conf=0.95, label=FALSE, show.groups = "BFB")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FDBF6F",kind="sd", conf=0.95, label=FALSE, show.groups = "SSH")
-points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="#FDBF6F")
-points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
-points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
-legend(0.40,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
-
-plot(NMDS, disp='sites', type="n")
-title(main="South", adj = 0.01, line = -2, cex.main=2.5)
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#CAB2D6",kind="sd", conf=0.95, label=FALSE, show.groups = "WPR")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#E31A1C",kind="sd", conf=0.95, label=FALSE, show.groups = "SNY")
-ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FF7F00",kind="sd", conf=0.95, label=FALSE, show.groups = "WLR")
-points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col="#CAB2D6")
-points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
-points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
-legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
-dev.off()
 
 #multi-panel NMDS with just sites
-pdf("site NMDS.pdf", height=9, width=14)
-par(mfrow=c(3,1), mar=c(4.1, 4.8, 1.5, 8.1),xpd=TRUE) 
+library(ggvegan)
+
+pdf("site NMDS.pdf", height=6.5, width=15)
+par(mfrow=c(1,3), mar=c(4.1, 4.8, 1.5, 8.1),xpd=TRUE) 
 
 plot(NMDS, disp='sites', type="n")
 title(main="North", adj = 0.01, line = -2, cex.main=2.5)
@@ -521,7 +475,7 @@ ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#A6CEE3",kind="sd", conf
 points(NMDS, display="sites", select=which(env.matrix$Site=="BAL"),pch=19, col="#A6CEE3")
 points(NMDS, display="sites", select=which(env.matrix$Site=="CHA"), pch=17, col="#B2DF8A")
 points(NMDS, display="sites", select=which(env.matrix$Site=="DAL"), pch=15, col="#33A02C")
-legend(0.7,1.12, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+legend(-.5,-1, title=NULL, pch=c(19,17,15), col=c("#A6CEE3","#B2DF8A","#33A02C"), cex=1.55, legend=c("Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 
 plot(NMDS, disp='sites', type="n")
 title(main="Central", adj = 0.01, line = -2, cex.main=2.5)
@@ -531,7 +485,7 @@ ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FDBF6F",kind="sd", conf
 points(NMDS, display="sites", select=which(env.matrix$Site=="SSH"),pch=19, col="#FDBF6F")
 points(NMDS, display="sites", select=which(env.matrix$Site=="DGM"), pch=17, col="#FB9A99")
 points(NMDS, display="sites", select=which(env.matrix$Site=="BFB"), pch=15, col="#1F78B4")
-legend(0.40,1.12, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
+legend(-.65,-1, title=NULL, pch=c(19,17,15), col=c("#FDBF6F","#FB9A99","#1F78B4"), cex=1.55, legend=c("Slate shale hill", "Dusty Goldenrod meadow", "Bedford barren"))
 
 plot(NMDS, disp='sites', type="n")
 title(main="South", adj = 0.01, line = -2, cex.main=2.5)
@@ -541,7 +495,7 @@ ordiellipse(NMDS, env.matrix$Site, draw="polygon", col="#FF7F00",kind="sd", conf
 points(NMDS, display="sites", select=which(env.matrix$Site=="WPR"), pch=17, col="#CAB2D6")
 points(NMDS, display="sites", select=which(env.matrix$Site=="SNY"), pch=15, col="#E31A1C")
 points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="#FF7F00")
-legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
+legend(-.45,-1, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
 dev.off()
 
 ######
