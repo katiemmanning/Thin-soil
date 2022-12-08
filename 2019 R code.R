@@ -309,6 +309,16 @@ allbugs_boxplot
 pdf("allbugs_boxplot.pdf", height=8, width=8) #height and width in inches
 allbugs_boxplot
 dev.off()
+
+allbugs_boxplot_RandD <- ggarrange(richness.plot, diversity.plot,
+                             #labels = c("A", "B"),
+                             ncol = 1, nrow = 2,
+                             common.legend = TRUE, legend = "bottom")
+allbugs_boxplot_RandD
+
+pdf("allbugs_boxplot_RandD.pdf", height=8, width=8) #height and width in inches
+allbugs_boxplot_RandD
+dev.off()
 ###
 
 #find colors in "Paired" color palette
@@ -803,6 +813,17 @@ bees_boxplot
 pdf("bees_boxplot.pdf", height=8, width=8) #height and width in inches
 bees_boxplot
 dev.off()
+
+bees_boxplot_RandD <- ggarrange(richness.plot, diversity.plot,
+                                #labels = c("A", "B"),
+                                ncol = 1, nrow = 2,
+                                common.legend = TRUE, legend = "bottom")
+bees_boxplot_RandD
+
+pdf("bees_boxplot_RandD.pdf", height=8, width=8) #height and width in inches
+bees_boxplot_RandD
+dev.off()
+
 ###
 
 #NMDS of bee community 
