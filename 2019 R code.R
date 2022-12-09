@@ -1009,3 +1009,181 @@ summary (inv.region)
 inv.site = multipatt(abund, site, func = "r.g", control = how(nperm=9999))
 summary (inv.site)
 #none
+
+
+####
+#linear models using data without the 6,011 parasitoid wasps that emerged at the Davis alvar in Aug 2019. 
+
+#bring in data
+bowls_noemer <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Bowl_natural%20-%20no%20emergence.csv",na.strings = NULL)
+summary(bowls_noemer)
+str(bowls_noemer) 
+ramps_noemer <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Ramp_natural%20-%20no%20emergence.csv",na.strings = NULL)
+summary(ramps_noemer)
+str(ramps_noemer)
+sticky_noemer <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/Insect%20ID%202019%20-%20Sticky%20card_natural%20-%20no%20emergence.csv",na.strings = NULL)
+summary(sticky_noemer)
+str(sticky_noemer)
+
+#add trap type as a column on each data file
+bowls_noemer$Trap="bowl"
+ramps_noemer$Trap="ramp"
+sticky_noemer$Trap="sticky"
+
+#combine data tables 
+library (plyr)
+bowlramp_noemer <- rbind.fill (bowls_noemer, ramps_noemer)
+allbugs_noemer <-rbind.fill (bowlramp_noemer, sticky_noemer)
+
+#add column for region (south central north)
+allbugs_noemer$region<-ifelse(allbugs_noemer$Site=="WLR", "South",
+                       ifelse(allbugs_noemer$Site=="WPR", "South",
+                              ifelse(allbugs_noemer$Site=="SNY", "South",
+                                     ifelse(allbugs_noemer$Site=="DAL", "North", 
+                                            ifelse(allbugs_noemer$Site=="BAL", "North",
+                                                   ifelse(allbugs_noemer$Site == "CHA", "North", "Central")
+                                            )))))
+str(allbugs_noemer)
+
+#To obtain richness counts
+allbugs.rowsums <- rowSums(allbugs_noemer[,5:50]>0)
+allbugs_noemer$richness <- allbugs.rowsums
+
+#To obtain abundance counts
+allbugs.abun <- rowSums(allbugs_noemer[,5:50])
+allbugs_noemer$abundance <- allbugs.abun
+
+#load vegan
+library(vegan)
+
+#calculate Shannon diversity
+diversity <-diversity(allbugs_noemer[,5:50])
+allbugs_noemer$diversity <-diversity
+
+#calculate Evenness
+evenness <-diversity/log(specnumber(allbugs_noemer[,5:50]))
+allbugs_noemer$evenness <- evenness
+
+#look at data set
+summary(allbugs_noemer)
+str(allbugs_noemer) #trap and region are listed as character 
+allbugs_noemer$Trap <- as.factor(allbugs_noemer$Trap)
+allbugs_noemer$region <- as.factor(allbugs_noemer$region)
+str(allbugs_noemer) #now trap and region are listed as a factor
+
+#models and checking assumptions
+library (emmeans) #for pairwise comparisons
+library(lme4)
+library(lmerTest) #to obtain p values
+library (multcompView) #to view letters
+
+#richness
+richmodel_noemer <- lmer(richness~region + Date + Trap + (1|Site:Replicate), data=allbugs_noemer)  #AIC = 1064
+summary(richmodel_noemer)
+AIC(richmodel_noemer)
+anova(richmodel_noemer) #region not sig 
+
+rich.emm<-emmeans(richmodel_noemer,pairwise~region) #comparing region richness
+rich.emm
+#results: South-Central are different, no difference between C-N or N-S (NO CHANGE FROM ORIGINAL)
+rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
+rich.cld 
+
+#abundance
+abunmodel_noemer <- glmer(abundance~region + Date + Trap + (1|Site:Replicate),data=allbugs_noemer, family = negative.binomial(2)) #AIC 2390
+
+summary(abunmodel_noemer)
+AIC(abunmodel_noemer)
+anova(abunmodel_noemer) 
+
+abun.emm<-emmeans(abunmodel_noemer,pairwise~region) #comparing region abundance
+abun.emm
+#results: Significant difference between all regions (DIFFERENT FROM ORIGINAL)
+abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
+abun.cld 
+
+#diversity
+divmodel_noemer <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs_noemer)  #AIC = 284
+summary(divmodel_noemer)
+AIC(divmodel_noemer)
+anova(divmodel_noemer) #region sig
+
+div.emm<-emmeans(divmodel_noemer,pairwise~region) #comparing region diversity
+div.emm
+#results: same for all (NO CHANGE FROM ORIGINAL)
+div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
+div.cld 
+
+#evenness
+evenmodel_noemer <- lmer(evenness~region + Date + Trap + (1|Site:Replicate), data=allbugs_noemer)  #AIC = -102
+summary(evenmodel_noemer)
+AIC(evenmodel_noemer)
+anova(evenmodel_noemer) #region sig
+
+even.emm<-emmeans(evenmodel_noemer,pairwise~region) #comparing region evenness
+even.emm
+#results: same btw central-north, different btw C-S and N-S (NO CHANGE FROM ORIGINAL)
+even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
+even.cld 
+
+#box plot
+library (ggplot2)
+
+#site richness by region
+richness.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = richness, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="", y="Richness")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+richness.plot_noemer
+
+#site abundance by region
+abundance.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region, level = c("South","Central","North")), y = abundance, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position ="bottom")+
+  labs(title="", x="", y="Abundance (log10)")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_y_continuous(trans="log10")+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+abundance.plot_noemer
+
+#site diversity by region
+diversity.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = diversity, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="", y="Shannon diversity")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+diversity.plot_noemer
+
+#site evenness by region
+evenness.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = evenness, fill=Site))+
+  geom_boxplot()+
+  theme_bw()+
+  theme(legend.position="bottom")+
+  labs(title="", x="Sites by Region", y="Evenness")+
+  #theme (plot.title = element_text(hjust=0.5))+
+  scale_fill_brewer(palette="Paired",name="Sites:",
+                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
+                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
+evenness.plot_noemer
+
+###
+#mush together plots
+library(ggpubr) 
+allbugs_boxplot_noemer <- ggarrange(richness.plot_noemer, abundance.plot_noemer, diversity.plot_noemer, evenness.plot_noemer,
+                             #labels = c("A", "B", "C", "D"),
+                             ncol = 1, nrow = 4,
+                             common.legend = TRUE, legend = "bottom")
+allbugs_boxplot_noemer
+
