@@ -369,7 +369,7 @@ str(com.matrix)
 rowSums(com.matrix)
 
 #ordination by NMDS
-NMDS<-metaMDS(com.matrix, distance="bray", k=2, autotransform=TRUE, trymax=300)
+NMDS<-metaMDS(com.matrix, distance="jaccard", k=2, autotransform=TRUE, trymax=300)
 NMDS
 ###stress = 0.22
 stressplot(NMDS)
@@ -401,9 +401,9 @@ distances_data<-vegdist(com.matrix)
 anova(betadisper(distances_data, env.matrix$region))
 #P-value = 0.001 -- cannot assume homogeneity of multivariate dispersion
 
-install.packages("devtools")
+#install.packages("devtools")
 library(devtools)
-install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+#install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library(pairwiseAdonis)
 citation("pairwiseAdonis")
 
