@@ -405,7 +405,7 @@ anova(betadisper(distances_data, env.matrix$region))
 library(devtools)
 #install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library(pairwiseAdonis)
-citation("pairwiseAdonis")
+#citation("pairwiseAdonis")
 
 pairwise.adonis(com.matrix, env.matrix$region) #south-central sig
 
