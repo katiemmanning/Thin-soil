@@ -165,7 +165,7 @@ influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 293
+divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs, family=gaussian)  #AIC = 293
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel) #region sig
@@ -537,22 +537,22 @@ bees$region<-ifelse(bees$Site=="WLR", "South",
 str(bees)
 
 #To obtain richness counts
-bees.rowsums <- rowSums(bees[,4:29]>0)
+bees.rowsums <- rowSums(bees[,5:30]>0)
 bees$richness <- bees.rowsums
 
 #To obtain abundance counts
-bees.abun <- rowSums(bees[,4:29])
+bees.abun <- rowSums(bees[,5:30])
 bees$abundance <- bees.abun
 
 #load vegan
 library(vegan)
 
 #calculate Shannon diversity
-diversity <-diversity(bees[,4:29])
+diversity <-diversity(bees[,5:30])
 bees$diversity <-diversity
 
 #calculate Evenness
-evenness <-diversity/log(specnumber(bees[,4:29]))
+evenness <-diversity/log(specnumber(bees[,5:30]))
 bees$evenness <- evenness
 
 #look at data set
@@ -564,7 +564,7 @@ library (emmeans) #for pairwise comparisons
 library(lme4)
 library(lmerTest) #to obtain p values
 
-richmodel <- lm(richness~region+Date+Trap+Site, data=bees)  #AIC = 171
+richmodel <- lmer(richness~region + Date + Trap + (1|Site:Replicate), data=bees)  #AIC = 170
 summary(richmodel)
 AIC(richmodel)
 anova(richmodel)
@@ -575,11 +575,6 @@ rich.emm
 rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
 rich.cld 
 
-rich.emm.s<-emmeans(richmodel,pairwise~Site) #comparing site richness
-rich.emm.s
-#results: same for all
-rich.cld.s<-multcomp::cld(rich.emm.s, alpha = 0.05, Letters = LETTERS)
-rich.cld.s
 
 #check assumptions
 dotchart(bees$richness, main = "richness", group = bees$region) # way to visualize outliers
@@ -611,7 +606,7 @@ influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##abundance linear mixed effects model
-abunmodel <- lm(abundance~region+Date+Trap+Site, data=bees)  #AIC = 252
+abunmodel <- lmer(abundance~region + Date + Trap + (1|Site:Replicate), data=bees)  #AIC = 238
 summary(abunmodel)
 AIC(abunmodel)
 anova(abunmodel)
@@ -621,12 +616,6 @@ abun.emm
 #results: same for all
 abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
 abun.cld 
-
-abun.emm.s<-emmeans(abunmodel,pairwise~Site) #comparing site abundance
-abun.emm.s
-#results: same for all
-abun.cld.s<-multcomp::cld(abun.emm.s, alpha = 0.05, Letters = LETTERS)
-abun.cld.s
 
 #check assumptions
 dotchart(bees$abundance, main = "abundance", group = bees$region) # way to visualize outliers
@@ -658,7 +647,7 @@ influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##diversity linear mixed effects model
-divmodel <- lm(diversity~region+Date+Trap+Site,data=bees)  #AIC = 67
+divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate),data=bees)  #AIC = 87
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel)
@@ -668,12 +657,6 @@ div.emm
 #results: same for all
 div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
 div.cld 
-
-div.emm.s<-emmeans(divmodel,pairwise~Site) #comparing site diversity
-div.emm.s
-#results: same for all
-div.cld.s<-multcomp::cld(div.emm.s, alpha = 0.05, Letters = LETTERS)
-div.cld.s
 
 #check assumptions
 dotchart(bees$diversity, main = "diversity", group = bees$region) # way to visualize outliers
@@ -705,7 +688,7 @@ influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##evenness linear mixed effects model
-evenmodel <- lm(evenness~region+Date+Trap+Site,data=bees)  #AIC = -34
+evenmodel <- lmer(evenness~region + Date + Trap + (1|Site:Replicate),data=bees)  #AIC = -5
 summary(evenmodel)
 AIC(evenmodel)
 anova(evenmodel)
@@ -715,12 +698,6 @@ even.emm
 #results: same for all
 even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
 even.cld 
-
-even.emm.s<-emmeans(evenmodel,pairwise~Site) #comparing site richness
-even.emm.s
-#results: same for all
-even.cld.s<-multcomp::cld(even.emm.s, alpha = 0.05, Letters = LETTERS)
-even.cld.s
 
 #check assumptions
 dotchart(bees$evenness, main = "evenness", group = bees$region) # way to visualize outliers
