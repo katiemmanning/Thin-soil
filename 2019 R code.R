@@ -121,49 +121,6 @@ influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 
 #
 
-##abundance linear mixed effects model
-abunmodel <- glmer(abundance~region + Date + Trap + (1|Site:Replicate),data=allbugs, family = negative.binomial(2)) #AIC 2501
-
-summary(abunmodel)
-AIC(abunmodel)
-anova(abunmodel) #region sig
-
-abun.emm<-emmeans(abunmodel,pairwise~region) #comparing region abundance
-abun.emm
-#results: same btw central-north, different btw central-south and north-south
-abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
-abun.cld 
-
-#check assumptions
-dotchart(allbugs$abundance, main = "abundance", group = allbugs$region) # way to visualize outliers
-
-with(allbugs, ad.test(abundance)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
-#p-value = < 2.2e-16
-
-with(allbugs, bartlett.test(abundance ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
-#p-value = < 2.2e-16
-
-plot(abunmodel) # check distribution of residuals
-
-# check normality with these figures, are there outliers at either end
-qqnorm(resid(abunmodel))
-qqline(resid(abunmodel))
-
-plot(simulateResiduals(abunmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.37758
-#dispersion test: p = 0.024 *sig deviation
-#outlier test: p = 0.56
-#no significant problems detected 
-
-densityPlot(rstudent(abunmodel)) # check density estimate of the distribution of residuals
-
-#Can't use with glmer
-# check for outliers influencing the data
-outlierTest(abunmodel)
-influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
-
-#
-
 ##diversity linear mixed effects model
 divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs, family=gaussian)  #AIC = 293
 summary(divmodel)
@@ -203,47 +160,6 @@ densityPlot(rstudent(divmodel)) # check density estimate of the distribution of 
 outlierTest(divmodel)
 influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 
-#
-
-##evenness linear mixed effects model
-evenmodel <- lmer(evenness~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = -83
-summary(evenmodel)
-AIC(evenmodel)
-anova(evenmodel) #region sig
-
-even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
-even.emm
-#results: same btw central-north, different btw C-N and N-S
-even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
-even.cld 
-
-#check assumptions
-dotchart(allbugs$evenness, main = "evenness", group = allbugs$region) # way to visualize outliers
-
-with(allbugs, ad.test(evenness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
-#p-value = 4.478e-05
-
-with(allbugs, bartlett.test(evenness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
-#p-value = 0.09482
-
-plot(evenmodel) # check distribution of residuals
-
-# check normality with these figures, are there outliers at either end
-qqnorm(resid(evenmodel))
-qqline(resid(evenmodel))
-
-plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.41025
-#dispersion test: p = 0.704
-#outlier test: p = 1
-#no significant problems detected 
-
-densityPlot(rstudent(evenmodel)) # check density estimate of the distribution of residuals
-
-# check for outliers influencing the data
-outlierTest(evenmodel)
-influenceIndexPlot(evenmodel, vars = c("Cook"), id = list(n = 3))
-
 #######
 #ggplot box plots
 library (ggplot2)
@@ -260,19 +176,6 @@ richness.plot<-ggplot(allbugs, aes(x = factor(region,level = c("South","Central"
                     labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 richness.plot
 
-#site abundance by region
-abundance.plot<-ggplot(allbugs, aes(x = factor(region, level = c("South","Central","North")), y = abundance, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position ="bottom")+
-  labs(title="", x="", y="Abundance (log10)")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_y_continuous(trans="log10")+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-abundance.plot
-
 #site diversity by region
 diversity.plot<-ggplot(allbugs, aes(x = factor(region,level = c("South","Central","North")), y = diversity, fill=Site))+
   geom_boxplot()+
@@ -285,24 +188,11 @@ diversity.plot<-ggplot(allbugs, aes(x = factor(region,level = c("South","Central
                     labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 diversity.plot
 
-#site evenness by region
-evenness.plot<-ggplot(allbugs, aes(x = factor(region,level = c("South","Central","North")), y = evenness, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position="bottom")+
-  labs(title="", x="Sites by Region", y="Evenness")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-evenness.plot
-
 ###
 #mush together plots
 library(ggpubr) 
-allbugs_boxplot <- ggarrange(richness.plot, abundance.plot, diversity.plot, evenness.plot,
-                     #labels = c("A", "B", "C", "D"),
-                     ncol = 1, nrow = 4,
+allbugs_boxplot <- ggarrange(richness.plot, diversity.plot,
+                     ncol = 1, nrow = 2,
                      common.legend = TRUE, legend = "bottom")
 allbugs_boxplot
 
@@ -310,15 +200,6 @@ pdf("allbugs_boxplot.pdf", height=8, width=8) #height and width in inches
 allbugs_boxplot
 dev.off()
 
-allbugs_boxplot_RandD <- ggarrange(richness.plot, diversity.plot,
-                             #labels = c("A", "B"),
-                             ncol = 1, nrow = 2,
-                             common.legend = TRUE, legend = "bottom")
-allbugs_boxplot_RandD
-
-pdf("allbugs_boxplot_RandD.pdf", height=8, width=8) #height and width in inches
-allbugs_boxplot_RandD
-dev.off()
 ###
 
 #find colors in "Paired" color palette
@@ -605,47 +486,6 @@ influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 
 #
 
-##abundance linear mixed effects model
-abunmodel <- lmer(abundance~region + Date + Trap + (1|Site:Replicate), data=bees)  #AIC = 238
-summary(abunmodel)
-AIC(abunmodel)
-anova(abunmodel)
-
-abun.emm<-emmeans(abunmodel,pairwise~region) #comparing region abundance
-abun.emm
-#results: same for all
-abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
-abun.cld 
-
-#check assumptions
-dotchart(bees$abundance, main = "abundance", group = bees$region) # way to visualize outliers
-
-with(bees, ad.test(abundance)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
-#p-value = 5.013e-13
-
-with(bees, bartlett.test(abundance ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
-#p-value = 0.00099 
-
-plot(abunmodel) # check distribution of residuals
-
-# check normality with these figures, are there outliers at either end
-qqnorm(resid(abunmodel))
-qqline(resid(abunmodel))
-
-plot(simulateResiduals(abunmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.06964
-#dispersion test: p = 0.168
-#outlier test: p = 0.3611
-#no significant problems detected 
-
-densityPlot(rstudent(abunmodel)) # check density estimate of the distribution of residuals
-
-# check for outliers influencing the data
-outlierTest(abunmodel)
-influenceIndexPlot(abunmodel, vars = c("Cook"), id = list(n = 3))
-
-#
-
 ##diversity linear mixed effects model
 divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate),data=bees)  #AIC = 87
 summary(divmodel)
@@ -685,47 +525,6 @@ densityPlot(rstudent(divmodel)) # check density estimate of the distribution of 
 outlierTest(divmodel)
 influenceIndexPlot(divmodel, vars = c("Cook"), id = list(n = 3))
 
-#
-
-##evenness linear mixed effects model
-evenmodel <- lmer(evenness~region + Date + Trap + (1|Site:Replicate),data=bees)  #AIC = -5
-summary(evenmodel)
-AIC(evenmodel)
-anova(evenmodel)
-
-even.emm<-emmeans(evenmodel,pairwise~region) #comparing region evenness
-even.emm
-#results: same for all
-even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
-even.cld 
-
-#check assumptions
-dotchart(bees$evenness, main = "evenness", group = bees$region) # way to visualize outliers
-
-with(bees, ad.test(evenness)) #Anderson-darling test for normality (good for small sample sizes), low p-value means assumption is violated
-#p-value = 0.00028
-
-with(bees, bartlett.test(evenness ~ region)) #Bartlett test for homogeneity of variance, low p-value means assumption is violated
-#p-value = 0.1592
-
-plot(evenmodel) # check distribution of residuals
-
-# check normality with these figures, are there outliers at either end
-qqnorm(resid(evenmodel))
-qqline(resid(evenmodel))
-
-plot(simulateResiduals(evenmodel)) # another way to check for normailty and homogeneity of variance
-#KS test: p = 0.44695
-#dispersion test: p = 0.088
-#outlier test: p = 1
-#no significant problems detected 
-
-densityPlot(rstudent(evenmodel)) # check density estimate of the distribution of residuals
-
-# check for outliers influencing the data
-outlierTest(evenmodel)
-influenceIndexPlot(evenmodel, vars = c("Cook"), id = list(n = 3))
-
 ##
 library (ggplot2)
 
@@ -741,19 +540,6 @@ richness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","N
                     labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 richness.plot
 
-#site abundance by region
-abundance.plot<-ggplot(bees, aes(x = factor(region, level = c("South","Central","North")), y = abundance, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position ="bottom")+
-  labs(title="", x="", y="Abundance")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  #scale_y_continuous(trans="log10")+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-abundance.plot
-
 #site diversity by region
 diversity.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = diversity, fill=Site))+
   geom_boxplot()+
@@ -766,85 +552,17 @@ diversity.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","
                     labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
 diversity.plot
 
-#site evenness by region
-evenness.plot<-ggplot(bees, aes(x = factor(region,level = c("South","Central","North")), y = evenness, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position="bottom")+
-  labs(title="", x="Sites by Region", y="Evenness")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-evenness.plot
-
 ###
 #mush together plots
 library(ggpubr) 
-bees_boxplot <- ggarrange(richness.plot, abundance.plot, diversity.plot, evenness.plot,
-                             #labels = c("A", "B", "C", "D"),
-                             ncol = 1, nrow = 4,
+bees_boxplot <- ggarrange(richness.plot, diversity.plot,
+                             ncol = 1, nrow = 2,
                              common.legend = TRUE, legend = "bottom")
 bees_boxplot
 
 pdf("bees_boxplot.pdf", height=8, width=8) #height and width in inches
 bees_boxplot
 dev.off()
-
-bees_boxplot_RandD <- ggarrange(richness.plot, diversity.plot,
-                                #labels = c("A", "B"),
-                                ncol = 1, nrow = 2,
-                                common.legend = TRUE, legend = "bottom")
-bees_boxplot_RandD
-
-pdf("bees_boxplot_RandD.pdf", height=8, width=8) #height and width in inches
-bees_boxplot_RandD
-dev.off()
-
-###
-
-#NMDS of bee community 
-library (vegan)
-
-#Create matrix of environmental variables
-env.matrix_bees<-bees[c(1:3,30:35)]
-#create matrix of community variables
-com.matrix_bees<-bees[c(4:29)]
-
-#ordination by NMDS
-NMDS_bees<-metaMDS(com.matrix_bees, distance="bray", k=2, autotransform=TRUE, trymax=300)
-NMDS_bees
-###stress =  8.59e-05 -- insufficient data
-stressplot(NMDS_bees)
-
-#plot bee NMDS for region
-#8 x 10
-plot(NMDS_bees, disp='sites', type="n")
-#title(main="Bee community composition by region", cex.main=1.5)
-#add ellipsoids with ordiellipse
-ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#CC79A7",kind="sd", conf=0.95, label=FALSE, show.groups = "South")
-ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#E69F00",kind="sd", conf=0.95, label=FALSE, show.groups = "North")
-ordiellipse(NMDS_bees, env.matrix_bees$region, draw="polygon", col="#009E73",kind="sd", conf=0.95, label=FALSE, show.groups = "Central") 
-#add data points
-points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="North"),pch=19, col="#E69F00")
-points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="Central"), pch=17, col="#009E73")
-points(NMDS_bees, display="sites", select=which(env.matrix_bees$region=="South"), pch=15, col="#CC79A7")
-#add legend
-#legend(8.9,1.12, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
-
-#bootstrapping and testing for differences between the groups (regions)
-fit<-adonis(com.matrix_bees ~ region, data = env.matrix_bees, permutations = 999, method="bray")
-fit
-#P=0.001
-
-#check assumption of homogeneity of multivariate dispersion 
-#P-value greater than 0.05 means assumption has been met
-distances_data<-vegdist(com.matrix_bees)
-anova(betadisper(distances_data, env.matrix_bees$region))
-#P-value = 0.3521 -- assumes homogeneity of multivariate dispersion
-
-pairwise.adonis(com.matrix_bees, env.matrix_bees$region) #none sig
-pairwise.adonis(com.matrix_bees, env.matrix_bees$Site) #none sig
 
 ###
 
@@ -954,41 +672,8 @@ pdf("accum curve.pdf", height=6, width=8) #height and width in inches
 accum
 dev.off()
 
-
-######
-
-#Plant analysis
-
-#bring in plant data (presence/absence)
-plants <- read.csv("https://raw.githubusercontent.com/katiemmanning/Thin-soil/main/Data/2019%20plants_new.csv",na.strings = NULL)
-
-#To obtain richness counts -- number of plants at each site
-plants.rowsums <- rowSums(plants[,4:42]>0)
-plants$richness <- plants.rowsums
-
-#look at data set
-summary(plants)
-str(plants)
-
-#indicator species analysis
-library (indicspecies)
-
-abund = plants[,4:ncol(plants)]
-region = plants$Region
-site = plants$Site
-
-inv.region = multipatt(abund, region, func = "r.g", control = how(nperm=9999))
-summary (inv.region)
-#Aster for central
-#Gaultheria procumbens and Pinus virginiana for south
-#none for north
-
-inv.site = multipatt(abund, site, func = "r.g", control = how(nperm=9999))
-summary (inv.site)
-#none
-
-
 ####
+
 #linear models using data without the 6,011 parasitoid wasps that emerged at the Davis alvar in Aug 2019. 
 
 #bring in data
@@ -1066,19 +751,6 @@ rich.emm
 rich.cld<-multcomp::cld(rich.emm, alpha = 0.05, Letters = LETTERS)
 rich.cld 
 
-#abundance
-abunmodel_noemer <- glmer(abundance~region + Date + Trap + (1|Site:Replicate),data=allbugs_noemer, family = negative.binomial(2)) #AIC 2390
-
-summary(abunmodel_noemer)
-AIC(abunmodel_noemer)
-anova(abunmodel_noemer) 
-
-abun.emm<-emmeans(abunmodel_noemer,pairwise~region) #comparing region abundance
-abun.emm
-#results: Significant difference between all regions (DIFFERENT FROM ORIGINAL)
-abun.cld<-multcomp::cld(abun.emm, alpha = 0.05, Letters = LETTERS)
-abun.cld 
-
 #diversity
 divmodel_noemer <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs_noemer)  #AIC = 284
 summary(divmodel_noemer)
@@ -1091,76 +763,4 @@ div.emm
 div.cld<-multcomp::cld(div.emm, alpha = 0.05, Letters = LETTERS)
 div.cld 
 
-#evenness
-evenmodel_noemer <- lmer(evenness~region + Date + Trap + (1|Site:Replicate), data=allbugs_noemer)  #AIC = -102
-summary(evenmodel_noemer)
-AIC(evenmodel_noemer)
-anova(evenmodel_noemer) #region sig
-
-even.emm<-emmeans(evenmodel_noemer,pairwise~region) #comparing region evenness
-even.emm
-#results: same btw central-north, different btw C-S and N-S (NO CHANGE FROM ORIGINAL)
-even.cld<-multcomp::cld(even.emm, alpha = 0.05, Letters = LETTERS)
-even.cld 
-
-#box plot
-library (ggplot2)
-
-#site richness by region
-richness.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = richness, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position="bottom")+
-  labs(title="", x="", y="Richness")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-richness.plot_noemer
-
-#site abundance by region
-abundance.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region, level = c("South","Central","North")), y = abundance, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position ="bottom")+
-  labs(title="", x="", y="Abundance (log10)")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_y_continuous(trans="log10")+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-abundance.plot_noemer
-
-#site diversity by region
-diversity.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = diversity, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position="bottom")+
-  labs(title="", x="", y="Shannon diversity")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-diversity.plot_noemer
-
-#site evenness by region
-evenness.plot_noemer<-ggplot(allbugs_noemer, aes(x = factor(region,level = c("South","Central","North")), y = evenness, fill=Site))+
-  geom_boxplot()+
-  theme_bw()+
-  theme(legend.position="bottom")+
-  labs(title="", x="Sites by Region", y="Evenness")+
-  #theme (plot.title = element_text(hjust=0.5))+
-  scale_fill_brewer(palette="Paired",name="Sites:",
-                    breaks=c("SNY", "WLR", "WPR", "BFB", "DGM", "SSH", "BAL", "CHA", "DAL"),
-                    labels=c("Snyder hollow","W ladder", "W picnic rock", "Bedford barren","Dusty goldenrod meadow", "Slate shale hill", "Beaton alvar", "Cape Hurd alvar", "Davis alvar"))
-evenness.plot_noemer
-
-###
-#mush together plots
-library(ggpubr) 
-allbugs_boxplot_noemer <- ggarrange(richness.plot_noemer, abundance.plot_noemer, diversity.plot_noemer, evenness.plot_noemer,
-                             #labels = c("A", "B", "C", "D"),
-                             ncol = 1, nrow = 4,
-                             common.legend = TRUE, legend = "bottom")
-allbugs_boxplot_noemer
 
