@@ -272,7 +272,7 @@ points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, 
 legend(0.888,0.83, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
-fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="bray")
+fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="jaccard")
 fit
 #P=0.001
 
@@ -338,9 +338,9 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="
 legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
 
 #bootstrapping and testing for differences between the groups (sites)
-fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="bray")
+fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="jaccard")
 fit
-#P= 0.01
+#P= 0.001
 
 #check assumption of homogeneity of multivariate dispersion 
 #P-value greater than 0.05 means assumption has been met
