@@ -122,7 +122,7 @@ influenceIndexPlot(richmodel, vars = c("Cook"), id = list(n = 3))
 #
 
 ##diversity linear mixed effects model
-divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs, family=gaussian)  #AIC = 293
+divmodel <- lmer(diversity~region + Date + Trap + (1|Site:Replicate), data=allbugs)  #AIC = 293
 summary(divmodel)
 AIC(divmodel)
 anova(divmodel) #region sig
@@ -272,7 +272,7 @@ points(NMDS, display="sites", select=which(env.matrix$region=="South"), pch=15, 
 legend(0.888,0.83, title=NULL, pch=c(19,17,15), col=c("#E69F00","#009E73","#CC79A7"), cex=1.5, legend=c("North", "Central", "South"))
 
 #bootstrapping and testing for differences between the groups (regions)
-fit<-adonis(com.matrix ~ region, data = env.matrix, permutations = 999, method="jaccard")
+fit<-adonis2(com.matrix ~ region, data = env.matrix, permutations = 999, method="jaccard")
 fit
 #P=0.001
 
@@ -338,7 +338,7 @@ points(NMDS, display="sites", select=which(env.matrix$Site=="WLR"),pch=19, col="
 legend(0.85,1.12, title=NULL, pch=c(19,17,15), col=c("#FF7F00","#CAB2D6","#E31A1C"), cex=1.55, legend=c("W ladder", "W picnic rock", "Synder hollow"))
 
 #bootstrapping and testing for differences between the groups (sites)
-fit<-adonis(com.matrix ~ Site, data = env.matrix, permutations = 999, method="jaccard")
+fit<-adonis2(com.matrix ~ Site, data = env.matrix, permutations = 999, method="jaccard")
 fit
 #P= 0.001
 
@@ -439,6 +439,12 @@ bees$evenness <- evenness
 #look at data set
 summary(bees)
 str(bees)
+
+#Create matrix of environmental variables    
+env.matrix_bees<-bees[c(1:4,31:33)]
+
+#create matrix of community variables
+com.matrix_bees<-bees[c(5:30)]
 
 ##richness linear mixed effects model
 library (emmeans) #for pairwise comparisons
